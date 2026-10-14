@@ -23,3 +23,4 @@ jobs:
     with:
       flutter-version: '3.47.2'
       sentin8-flutter-path: ''
+      build-web: true
