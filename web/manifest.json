@@ -1,0 +1,18 @@
+{
+    "name": "Sentin8 Sign In",
+    "short_name": "Sentin8",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0A0A0A",
+    "theme_color": "#D4AF37",
+    "description": "Sentin8 authentication — sign in to your organization.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "assets/assets/logos/sentin8-logo-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}

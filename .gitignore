@@ -1,0 +1,17 @@
+# Flutter/Dart build artifacts
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Generated platform glue
+android/.gradle/
+android/local.properties
+ios/Pods/
+ios/.symlinks/
+
+# Local environment (never commit secrets/DSNs)
+.env
