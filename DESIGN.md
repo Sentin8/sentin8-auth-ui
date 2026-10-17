@@ -1,4 +1,4 @@
-# DESIGN.md: Sentin8 Auth Hosted UI (auth-ui) — Detailed Design Document
+# Sentin8 Auth Hosted UI (auth-ui) — Detailed Design Document
 
 > Audience: maintainers, reviewers, and architects modifying the hosted auth
 > UI. For the overview read `auth-ui/README.md`; for the business view read
