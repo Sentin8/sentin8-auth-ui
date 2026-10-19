@@ -1,9 +1,9 @@
-# Sentin8 Auth Hosted UI (auth-ui) — Detailed Design Document
+# Sentin8 Auth Hosted UI (auth-ui) - Detailed Design Document
 
 > Audience: maintainers, reviewers, and architects modifying the hosted auth
 > UI. For the overview read `auth-ui/README.md`; for the business view read
 > `auth-ui/BUSINESS.md`. All endpoints and claims below describe Sentin8:Auth
-> as implemented — the UI never calls another service.
+> as implemented - the UI never calls another service.
 
 ## 1. Scope & Context
 
@@ -23,15 +23,15 @@
 **Does NOT own (delegated to Sentin8:Auth):**
 
 - Authentication decisions, credential verification, MFA enforcement,
-  lockout/rate-limit policy — the UI submits credentials and renders the
+  lockout/rate-limit policy - the UI submits credentials and renders the
   result; the Auth service decides.
-- Session durability — the session lives in the Auth cookie; the UI holds no
+- Session durability - the session lives in the Auth cookie; the UI holds no
   durable credentials.
 - OAuth authorization logic (PAR, PKCE minting, consent storage,
-  `code` issuance) — the UI only round-trips context and follows redirects.
-- Password-reset and email-verification token semantics — token generation,
+  `code` issuance) - the UI only round-trips context and follows redirects.
+- Password-reset and email-verification token semantics - token generation,
   single-use enforcement, and expiry are Auth-owned.
-- Branding storage and resolution (org base → env override) — Auth resolves
+- Branding storage and resolution (org base → env override) - Auth resolves
   and serves it; the UI consumes `GET /v1/branding`.
 
 ```mermaid
@@ -44,7 +44,7 @@ graph TD
         OBS["AuthUiLogger / Metrics / Alerts"]
         BRIDGE["window.sentin8Test* bridge"]
     end
-    subgraph AuthSvc["Sentin8:Auth — same origin"]
+    subgraph AuthSvc["Sentin8:Auth - same origin"]
         STATIC["Static UI + SPA fallback"]
         AUTHAPI["/v1/* auth APIs · /oauth/*"]
     end
@@ -105,7 +105,7 @@ graph TD
     OBS -.-> Pages
 ```
 
-### 2.2 Request Lifecycle — Sign-in with MFA and OAuth completion
+### 2.2 Request Lifecycle - Sign-in with MFA and OAuth completion
 
 ```mermaid
 sequenceDiagram
@@ -133,7 +133,7 @@ sequenceDiagram
     UI->>B: location.href = redirect_url (code + state at relying client)
 ```
 
-### 2.3 Request Lifecycle — Consent with FDX account selection
+### 2.3 Request Lifecycle - Consent with FDX account selection
 
 ```mermaid
 sequenceDiagram
@@ -157,7 +157,7 @@ sequenceDiagram
     note over C,A: Deny path: redirect_uri?error=access_denied&state=...
 ```
 
-### 2.4 Request Lifecycle — Device approval (RFC 8628)
+### 2.4 Request Lifecycle - Device approval (RFC 8628)
 
 ```mermaid
 sequenceDiagram
@@ -253,7 +253,7 @@ matching Flutter route.
 
 ## 5. Cross-Cutting Concerns
 
-- **Authentication/token verification**: delegated entirely to Sentin8:Auth —
+- **Authentication/token verification**: delegated entirely to Sentin8:Auth -
   the UI sends no bearer tokens for same-origin calls; the cookie session is
   the principal. The only Bearer usage is `POST /device/verify` right after
   sign-in within DevicePage when no cookie session pre-exists.
@@ -268,7 +268,7 @@ matching Flutter route.
   falls back per-field (compiled default → branding value → bundled logo).
 - **TLS posture**: served only from the Auth TLS origin (platform post-
   quantum TLS); no external CDN dependencies (CanvasKit is force-served from
-  `/canvaskit/` on the same origin — air-gapped-safe loading).
+  `/canvaskit/` on the same origin - air-gapped-safe loading).
 - **Graceful degradation**: branding fetch failure never blocks rendering;
   consent account-list failure renders scope consent only.
 
@@ -290,7 +290,7 @@ flowchart TD
 ```
 
 - **Session probe failures**: `GET /v1/session` 401/404 is treated as "no
-  session" (device/assisted flows then present sign-in inline) — never an
+  session" (device/assisted flows then present sign-in inline) - never an
   error.
 - **Reset-confirm 401** renders "Reset link expired or invalid" as a terminal
   state.
@@ -308,7 +308,7 @@ flowchart TD
 - One active HTTP request family per user action; no connection pooling
   beyond the browser default.
 - Polling: wallet sign-in polls `GET /v1/session` every 2 s bounded by
-  `Future.doWhile` while unauthenticated — the only recurring request loop.
+  `Future.doWhile` while unauthenticated - the only recurring request loop.
 - Branding fetch is fire-and-forget; rendering never blocks on it.
 - Release build (`flutter build web --release --dart-define=SENTIN8_VERSION`)
   with tree-shaken icons; assets limited to logo SVGs.
@@ -343,7 +343,7 @@ graph TD
   state) and widget behavior.
 - E2E layer: Playwright drives ARIA-labeled DOM (semantics enabled at
   startup); `sentin8TestSignIn/SignUp/Navigate` trigger the same code paths as
-  button clicks — no direct API calls from tests.
+  button clicks - no direct API calls from tests.
 - Deliberately not tested here: Auth server behavior (Auth's own test suite),
   platform TLS (platform-level), browser matrix beyond the platform's e2e
   targets.

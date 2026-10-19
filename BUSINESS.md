@@ -1,4 +1,4 @@
-# Sentin8 Auth Hosted UI (auth-ui) — Business Requirements & Functionality
+# Sentin8 Auth Hosted UI (auth-ui) - Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what the
 > Sentin8:Auth hosted UI **does for the business**. For architecture read
@@ -9,9 +9,9 @@
 - Provide tenants and their users with a professional, brandable sign-in
   experience that reflects each organization's identity instead of a generic
   login page.
-- Guarantee that every authentication journey — password sign-in, MFA,
+- Guarantee that every authentication journey - password sign-in, MFA,
   account recovery, consent, device approval, teller-assisted login, and
-  wallet sign-in — happens inside the identity service's own security
+  wallet sign-in - happens inside the identity service's own security
   boundary, so credentials are never exposed to client applications.
 - Make the platform immediately usable for every OAuth client without any
   client-side authentication code: consoles, CLIs, and apps redirect to the
@@ -79,7 +79,7 @@ results of Sentin8:Auth flows:
 | Assisted login confirmation | The operator-initiated login completes; refusal leaves the customer unauthenticated. |
 | Wallet authentication | Session established for the wallet-presented identity. |
 
-**Inbound (consumed):** none — the UI receives browser redirects and query
+**Inbound (consumed):** none - the UI receives browser redirects and query
 parameters, not platform events.
 
 ## 5. Business Rules & Invariants
@@ -95,7 +95,7 @@ parameters, not platform events.
 5. Registration requires terms acceptance and a password meeting the
    strength policy.
 6. Every authentication journey that starts from an application ends with the
-   user being returned to that application — never dropped on a platform page.
+   user being returned to that application - never dropped on a platform page.
 7. Unbranded tenants see the platform identity; branded tenants see their own,
    with platform elements (`Powered by Sentin8`) retained.
 

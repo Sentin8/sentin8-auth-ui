@@ -1,4 +1,4 @@
-# README.md: Sentin8 Auth Hosted UI (auth-ui) — Overview
+# README.md: Sentin8 Auth Hosted UI (auth-ui) - Overview
 
 > Audience: anyone evaluating or onboarding to the Sentin8:Auth hosted sign-in
 > experience. For wire-level detail read `DESIGN.md`; for the business view of
@@ -13,7 +13,7 @@ RFC 8628 device approval, CIBA Assisted Login confirmation, and EUDI wallet
 sign-in. It is built as a static Flutter Web bundle and embedded directly in
 the Sentin8:Auth Rust server, which serves it from the same hostname as the
 OAuth endpoints. All API calls are same-origin against the Auth service's own
-`/v1/*` and `/oauth/*` APIs — the app is the auth web tier, not a BFF client.
+`/v1/*` and `/oauth/*` APIs - the app is the auth web tier, not a BFF client.
 
 ## 2. Motivation
 
@@ -25,7 +25,7 @@ OAuth endpoints. All API calls are same-origin against the Auth service's own
   auth screens or ever handling credentials itself.
 - **Credentials must never leave the auth origin.** A same-origin hosted UI
   guarantees that passwords and session cookies are exchanged only with the
-  Auth service itself — clients only ever receive the resulting redirect
+  Auth service itself - clients only ever receive the resulting redirect
   (`code` / `state`) at their `redirect_uri`. This removes the entire class of
   token-leak risks that client-side auth forms introduce.
 - **Tenant branding at the front door.** Every environment wants its own
@@ -33,7 +33,7 @@ OAuth endpoints. All API calls are same-origin against the Auth service's own
   `GET /v1/branding` (cookie-scoped by TLS context headers) lets a single
   build serve all tenants.
 - **Browser-only, zero-backend build complexity.** The app is pure Flutter
-  Web rendered as static files — no server-side rendering, no per-tenant
+  Web rendered as static files - no server-side rendering, no per-tenant
   builds, no runtime configuration beyond branding.
 
 ## 3. Architecture & High-Level Design
@@ -88,29 +88,29 @@ graph TD
   local form state and error banner. OAuth context is passed as constructor
   arguments parsed from the browser URL.
 * `Sentin8Colors` / `Sentin8Text` / `Sentin8Spacing` / `sentin8ThemeForBranding()`
-  (`lib/theme.dart`): the design-system layer — 4px grid, Royal Gold accent,
+  (`lib/theme.dart`): the design-system layer - 4px grid, Royal Gold accent,
   dark/light palettes, glass panels, and shared widgets (`GlassPanel`,
   `Sentin8Logo`, `ErrorBanner`, `SuccessBanner`, `LoadingSpinner`).
 * `AuthUiLogger` / `AuthUiMetrics` / `AuthUiAlerts`
-  (`lib/observability.dart`): client-side observability — a correlation id on
+  (`lib/observability.dart`): client-side observability - a correlation id on
   every request, an in-memory log ring buffer, per-flow success/latency
   counters, and sliding-window alert thresholds.
 * `registerTestBridge()` (`lib/test_bridge.dart`): e2e automation entry points
   (`window.sentin8TestSignUp/SignIn/Navigate`) that invoke the same widget code
-  as the UI buttons — automation never bypasses the UI by calling the API.
+  as the UI buttons - automation never bypasses the UI by calling the API.
 
 ## 5. Rationale, Trade-offs, and Alternatives
 
 * **Embed in the Auth server instead of a separate web host.** One origin means
   cookies are first-party, CSRF applies uniformly, and OAuth redirect loops
   never leave the auth domain. Rejected alternative: serving the UI from
-  Sentin8:Web (as dash is) — that would host a credentials-collecting page
+  Sentin8:Web (as dash is) - that would host a credentials-collecting page
   under a client-style frontend surface rather than inside the identity
   service itself.
 * **Route-per-step with full page loads instead of an SPA router.** OAuth
   already treats the browser as the state carrier (`state`, `code_challenge`).
   Fresh page loads make each step restartable, linkable, and trivially aligned
-  with the backend's redirect logic. Rejected alternative: an in-app navigator —
+  with the backend's redirect logic. Rejected alternative: an in-app navigator -
   it would need to re-implement browser redirect targets
   (`redirect_uri?code=...`) as synthetic routes.
 * **`setState` + `InheritedWidget` instead of a state-management package.** The
@@ -120,7 +120,7 @@ graph TD
 * **Memory-only CSRF token id.** The session token id used to arm
   `x-sentin8-csrf` is kept only for the lifetime of the page that fetched it.
   The durable session lives entirely in the Auth server cookie session.
-  Rejected alternative: persisting tokens in web storage — unnecessary and
+  Rejected alternative: persisting tokens in web storage - unnecessary and
   weaker than the HttpOnly cookie.
 * **Raw `web.window.fetch` for branding, `http` for the API.** Branding must be
   fetched independently of `AuthApi` construction, always with
@@ -134,12 +134,12 @@ graph TD
 ## 6. Internal Implementation & Invariants (Private Design)
 
 * **Invariants:**
-  - Every request the UI issues goes to `window.location.origin` — no
+  - Every request the UI issues goes to `window.location.origin` - no
     cross-origin API calls, no configurable backend host.
   - Password material exists only inside a page's form controllers and the one
     POST body that consumes it; it is never logged or persisted.
   - OAuth context (`client_id`, `redirect_uri`, `state`, `code_challenge`,
-    `scope`) is round-tripped across every navigation between auth pages —
+    `scope`) is round-tripped across every navigation between auth pages -
     losing it would strand the user outside their originating flow.
   - Sign-up never auto-completes an OAuth authorization; the browser is sent
     back through `/oauth/authorize` (protected authorization requests) to
