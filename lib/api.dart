@@ -304,7 +304,7 @@ class AuthApi {
   /// Calls POST /oauth/authorize/continue with the session token and OAuth
   /// params. Auth validates the session, issues an authorization code, and
   /// returns JSON with the redirect URL (e.g.
-  /// https://sentin8-bff.ops.sys.sentin8.local/auth/callback?code=...&state=...).
+  /// https://sentin8-bff.ops.sys.local.sentin8.dev/auth/callback?code=...&state=...).
   ///
   /// The Flutter UI then navigates the browser to the redirect URL so
   /// that BFF receives the authorization code and sets the session cookie.
