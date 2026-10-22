@@ -317,6 +317,21 @@ class AuthApi {
     required String userId,
     required String sessionToken,
     List<String> selectedAccountIds = const [],
+    // OIDC Core §3.1.2.1 protocol params (auth DESIGN §9a.11) - the
+    // params the caller's authorize request carried, forwarded verbatim
+    // so the issued code record binds the SAME request (nonce in the ID
+    // token, response_mode JARM, the §5.5 claims selection, acr_values,
+    // the RFC 8707 resource indicator).
+    String? nonce,
+    String? responseMode,
+    String? claims,
+    String? acrValues,
+    String? resource,
+    // RFC 9449 dpop_jkt - forwarded into the code record.
+    String? dpopJkt,
+    // The USER DENIED the request (cancel) - auth redirects back with
+    // error=access_denied instead of minting a code (RFC 6749).
+    bool deny = false,
   }) async {
     final sw = Stopwatch()..start();
     final res = await _client.post(
@@ -331,6 +346,14 @@ class AuthApi {
         'user_id': userId,
         'session_token': sessionToken,
         'selected_account_ids': selectedAccountIds,
+        if (nonce != null && nonce.isNotEmpty) 'nonce': nonce,
+        if (responseMode != null && responseMode.isNotEmpty)
+          'response_mode': responseMode,
+        if (claims != null && claims.isNotEmpty) 'claims': claims,
+        if (acrValues != null && acrValues.isNotEmpty) 'acr_values': acrValues,
+        if (resource != null && resource.isNotEmpty) 'resource': resource,
+        if (dpopJkt != null && dpopJkt.isNotEmpty) 'dpop_jkt': dpopJkt,
+        if (deny) 'deny': true,
       }),
     );
     sw.stop();

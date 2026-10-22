@@ -20,6 +20,9 @@ import 'package:web/web.dart' as web;
 // Global handler functions set by each page's initState.
 void Function(String, String, String, String)? _signUpHandler;
 void Function(String, String)? _signInHandler;
+void Function()? _denyHandler;
+void Function()? _consentApproveHandler;
+void Function()? _consentDenyHandler;
 
 // Called by the Flutter app in main() to expose the bridge on window.
 void registerTestBridge() {
@@ -47,12 +50,57 @@ void registerTestBridge() {
   );
 
   w.setProperty(
+    'sentin8TestDeny'.toJS,
+    (() {
+      if (_denyHandler != null) {
+        _denyHandler!();
+        return true;
+      }
+      return false;
+    }).toJS,
+  );
+
+  w.setProperty(
+    'sentin8TestConsentApprove'.toJS,
+    (() {
+      if (_consentApproveHandler != null) {
+        _consentApproveHandler!();
+        return true;
+      }
+      return false;
+    }).toJS,
+  );
+
+  w.setProperty(
+    'sentin8TestConsentDeny'.toJS,
+    (() {
+      if (_consentDenyHandler != null) {
+        _consentDenyHandler!();
+        return true;
+      }
+      return false;
+    }).toJS,
+  );
+
+  w.setProperty(
     'sentin8TestNavigate'.toJS,
     ((String path) {
       web.window.location.href = path;
       return true;
     }).toJS,
   );
+}
+
+void setDenyHandler(void Function()? handler) {
+  _denyHandler = handler;
+}
+
+void setConsentHandlers({
+  void Function()? approve,
+  void Function()? deny,
+}) {
+  _consentApproveHandler = approve;
+  _consentDenyHandler = deny;
 }
 
 void setSignUpHandler(void Function(String, String, String, String)? handler) {

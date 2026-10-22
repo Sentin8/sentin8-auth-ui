@@ -121,6 +121,16 @@ class _AuthApp extends StatelessWidget {
           codeChallenge: q['code_challenge'],
           scope: q['scope'],
           consentRequired: q['consent_required'] != 'false',
+          // OIDC Core §3.1.2.1 protocol params (auth-ui §9a.11) -
+          // forwarded to authorize/continue so the code record binds the
+          // exact caller request (nonce → ID token, JARM response_mode,
+          // the §5.5 claims selection, acr_values, RFC 8707 resource).
+          nonce: q['nonce'],
+          responseMode: q['response_mode'],
+          claims: q['claims'],
+          acrValues: q['acr_values'],
+          resource: q['resource'],
+          dpopJkt: q['dpop_jkt'],
         ), settings);
 
       case 'sign-up':
@@ -155,6 +165,12 @@ class _AuthApp extends StatelessWidget {
           userId: q['user_id'],
           sessionToken: q['session_token'],
           codeChallenge: q['code_challenge'],
+          nonce: q['nonce'],
+          responseMode: q['response_mode'],
+          claims: q['claims'],
+          acrValues: q['acr_values'],
+          resource: q['resource'],
+          dpopJkt: q['dpop_jkt'],
         ), settings);
 
       case 'recover':

@@ -14,6 +14,7 @@
 // simple approve/deny is shown with no vertical knowledge.
 // See sentin8-architecture-principles.md §4.16.
 import 'package:web/web.dart' as web;
+import '../test_bridge.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../branding_provider.dart';
@@ -29,6 +30,17 @@ class ConsentPage extends StatefulWidget {
   final String? sessionToken;
   final String? codeChallenge;
   final String? consentFlow;
+  // OIDC Core §3.1.2.1 protocol params forwarded from the sign-in page
+  // (the authorize request's context - the consent screen completes the
+  // SAME request: nonce in the ID token, JARM response_mode, the §5.5
+  // claims selection, acr_values, the RFC 8707 resource indicator, the
+  // RFC 9449 pre-bound dpop_jkt).
+  final String? nonce;
+  final String? responseMode;
+  final String? claims;
+  final String? acrValues;
+  final String? resource;
+  final String? dpopJkt;
 
   const ConsentPage({
     super.key,
@@ -41,6 +53,12 @@ class ConsentPage extends StatefulWidget {
     this.sessionToken,
     this.codeChallenge,
     this.consentFlow,
+    this.nonce,
+    this.responseMode,
+    this.claims,
+    this.acrValues,
+    this.resource,
+    this.dpopJkt,
   });
 
   @override
@@ -96,6 +114,13 @@ class _ConsentPageState extends State<ConsentPage> {
     if (_hasConsentFlow && widget.userId != null && widget.sessionToken != null) {
       _fetchAccounts();
     }
+    // E2E/bridge: the approval + deny buttons are driven through the
+    // SAME widget methods the clicks use (the certification rig drives
+    // the consent screen - approve AND the user-rejects DENY path).
+    setConsentHandlers(
+      approve: _approve,
+      deny: _deny,
+    );
   }
 
   Future<void> _fetchAccounts() async {
@@ -164,6 +189,12 @@ class _ConsentPageState extends State<ConsentPage> {
         userId: widget.userId ?? '',
         sessionToken: widget.sessionToken ?? '',
         selectedAccountIds: _selectedAccountIds.toList(),
+        nonce: widget.nonce,
+        responseMode: widget.responseMode,
+        claims: widget.claims,
+        acrValues: widget.acrValues,
+        resource: widget.resource,
+        dpopJkt: widget.dpopJkt,
       );
       // Redirect the browser to the callback URL (FDX consent callback).
       web.window.location.href = redirectUrl;
@@ -185,13 +216,59 @@ class _ConsentPageState extends State<ConsentPage> {
   }
 
   void _deny() {
-    // Redirect back to the client with an access_denied error
+    // Deny through the AUTH surface: authorize/continue with deny=true
+    // - auth redirects back with error=access_denied + state (+ iss
+    // under require_iss) from the SAME code path the approval uses, so
+    // the client sees a consistent error redirect (the suite's
+    // user-rejects module checks the redirect's parameters).
+    final userId = widget.userId ?? '';
+    final sessionToken = widget.sessionToken ?? '';
+    if (userId.isNotEmpty && sessionToken.isNotEmpty) {
+      _denyThroughAuth(userId, sessionToken);
+      return;
+    }
+    // No session yet (deny before sign-in completed) - the client-side
+    // fallback redirect stands (the params are already known).
     final redirectUri = widget.redirectUri ?? '';
     final state = widget.state ?? '';
     if (redirectUri.isNotEmpty) {
       web.window.location.href = '$redirectUri?error=access_denied&state=$state';
     } else {
       web.window.location.href = '/sign-in';
+    }
+  }
+
+  Future<void> _denyThroughAuth(String userId, String sessionToken) async {
+    setState(() => _isLoading = true);
+    try {
+      final api = AuthApi(baseUrl: '');
+      final redirectUrl = await api.authorizeContinue(
+        clientId: widget.clientId ?? '',
+        redirectUri: widget.redirectUri ?? '',
+        scope: widget.scope ?? 'openid profile email',
+        state: widget.state ?? '',
+        codeChallenge: widget.codeChallenge,
+        userId: userId,
+        sessionToken: sessionToken,
+        selectedAccountIds: const [],
+        nonce: widget.nonce,
+        responseMode: widget.responseMode,
+        claims: widget.claims,
+        acrValues: widget.acrValues,
+        resource: widget.resource,
+        dpopJkt: widget.dpopJkt,
+        deny: true,
+      );
+      web.window.location.href = redirectUrl;
+    } catch (_) {
+      // Fall back to the client-side error redirect.
+      final redirectUri = widget.redirectUri ?? '';
+      final state = widget.state ?? '';
+      if (redirectUri.isNotEmpty) {
+        web.window.location.href = '$redirectUri?error=access_denied&state=$state';
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

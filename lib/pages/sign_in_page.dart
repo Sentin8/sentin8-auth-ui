@@ -28,6 +28,19 @@ class SignInPage extends StatefulWidget {
   final String? codeChallenge;
   final String? scope;
   final bool consentRequired;
+  // OIDC Core §3.1.2.1 protocol params the certification suite sends on
+  // every authorize request (auth DESIGN §9a.11): nonce is REQUIRED for
+  // the suite's ID-token binding checks; response_mode/claims/acr ride
+  // the same intake so the SPA's authorizeContinue emits the exact
+  // request the caller made.
+  final String? nonce;
+  final String? responseMode;
+  final String? claims;
+  final String? acrValues;
+  final String? resource;
+  // RFC 9449 dpop_jkt - the pre-bound DPoP key thumbprint (rides the
+  // code record so the mint sender-constrains the token).
+  final String? dpopJkt;
 
   const SignInPage(
       {super.key,
@@ -36,7 +49,13 @@ class SignInPage extends StatefulWidget {
       this.state,
       this.codeChallenge,
       this.scope,
-      this.consentRequired = true});
+      this.consentRequired = true,
+      this.nonce,
+      this.responseMode,
+      this.claims,
+      this.acrValues,
+      this.resource,
+      this.dpopJkt});
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -63,6 +82,15 @@ class _SignInPageState extends State<SignInPage> {
       _emailCtrl.text = email;
       _passwordCtrl.text = password;
       _signIn();
+    });
+    // The certification suite's user-rejects module drives the DENY
+    // path: the bridge deny call completes the CURRENT session's
+    // authorize continuation with deny=true (auth redirects back with
+    // error=access_denied). The deny path doesn't need fresh
+    // credentials - it uses the signed-in session (the suite reaches
+    // the deny step AFTER the user signed in).
+    setDenyHandler(() {
+      _denyAuthorizeFlow();
     });
   }
 
@@ -131,6 +159,26 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
+
+  /// The suite's user-rejects path: forward to the consent screen with
+  /// the deny instruction (the consent page holds the session context
+  /// and completes the continuation with deny=true).
+  void _denyAuthorizeFlow() {
+    if (widget.clientId == null || widget.clientId!.isEmpty) return;
+    final params = <String, String>{
+      'client_id': widget.clientId ?? '',
+      'redirect_uri': widget.redirectUri ?? '',
+      'scope': widget.scope ?? '',
+      'state': widget.state ?? '',
+      'deny': '1',
+      if (widget.codeChallenge != null) 'code_challenge': widget.codeChallenge!,
+    };
+    final qs = params.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+    _navigateTo('/consent?$qs');
+  }
+
   /// Complete the OAuth flow by calling /oauth/authorize/continue.
   /// This issues an authorization code and redirects the browser to
   /// the BFF callback URL.
@@ -149,6 +197,14 @@ class _SignInPageState extends State<SignInPage> {
         codeChallenge: widget.codeChallenge,
         userId: userId,
         sessionToken: sessionToken,
+        // OIDC params forwarded (DESIGN §9a.11) - the code record binds
+        // exactly the request the caller made.
+        nonce: widget.nonce,
+        responseMode: widget.responseMode,
+        claims: widget.claims,
+        acrValues: widget.acrValues,
+        resource: widget.resource,
+        dpopJkt: widget.dpopJkt,
       );
       // Redirect the browser to the BFF callback URL
       web.window.location.href = redirectUrl;
@@ -173,6 +229,12 @@ class _SignInPageState extends State<SignInPage> {
       'user_id': userId,
       'session_token': sessionToken,
       if (widget.codeChallenge != null) 'code_challenge': widget.codeChallenge!,
+      if (widget.nonce != null) 'nonce': widget.nonce!,
+      if (widget.responseMode != null) 'response_mode': widget.responseMode!,
+      if (widget.claims != null) 'claims': widget.claims!,
+      if (widget.acrValues != null) 'acr_values': widget.acrValues!,
+      if (widget.resource != null) 'resource': widget.resource!,
+      if (widget.dpopJkt != null) 'dpop_jkt': widget.dpopJkt!,
     };
     final qs = params.entries
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
