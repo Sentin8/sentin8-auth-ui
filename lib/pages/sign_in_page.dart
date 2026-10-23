@@ -35,6 +35,9 @@ class SignInPage extends StatefulWidget {
   // request the caller made.
   final String? nonce;
   final String? responseMode;
+  // DESIGN 9a.13 - the CELL's response_type (the fragment cells
+  // deliver the id_token/token members in the callback fragment).
+  final String? responseType;
   final String? claims;
   final String? acrValues;
   final String? resource;
@@ -52,6 +55,7 @@ class SignInPage extends StatefulWidget {
       this.consentRequired = true,
       this.nonce,
       this.responseMode,
+      this.responseType,
       this.claims,
       this.acrValues,
       this.resource,
@@ -201,6 +205,7 @@ class _SignInPageState extends State<SignInPage> {
         // exactly the request the caller made.
         nonce: widget.nonce,
         responseMode: widget.responseMode,
+        responseType: widget.responseType,
         claims: widget.claims,
         acrValues: widget.acrValues,
         resource: widget.resource,

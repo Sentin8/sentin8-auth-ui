@@ -324,6 +324,8 @@ class AuthApi {
     // the RFC 8707 resource indicator).
     String? nonce,
     String? responseMode,
+    // DESIGN 9a.13 - the CELL's response_type (the fragment cells).
+    String? responseType,
     String? claims,
     String? acrValues,
     String? resource,
@@ -349,6 +351,8 @@ class AuthApi {
         if (nonce != null && nonce.isNotEmpty) 'nonce': nonce,
         if (responseMode != null && responseMode.isNotEmpty)
           'response_mode': responseMode,
+        if (responseType != null && responseType.isNotEmpty)
+          'response_type': responseType,
         if (claims != null && claims.isNotEmpty) 'claims': claims,
         if (acrValues != null && acrValues.isNotEmpty) 'acr_values': acrValues,
         if (resource != null && resource.isNotEmpty) 'resource': resource,

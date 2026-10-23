@@ -127,6 +127,7 @@ class _AuthApp extends StatelessWidget {
           // the §5.5 claims selection, acr_values, RFC 8707 resource).
           nonce: q['nonce'],
           responseMode: q['response_mode'],
+          responseType: q['response_type'],
           claims: q['claims'],
           acrValues: q['acr_values'],
           resource: q['resource'],
@@ -167,6 +168,7 @@ class _AuthApp extends StatelessWidget {
           codeChallenge: q['code_challenge'],
           nonce: q['nonce'],
           responseMode: q['response_mode'],
+          responseType: q['response_type'],
           claims: q['claims'],
           acrValues: q['acr_values'],
           resource: q['resource'],

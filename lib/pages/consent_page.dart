@@ -37,6 +37,8 @@ class ConsentPage extends StatefulWidget {
   // RFC 9449 pre-bound dpop_jkt).
   final String? nonce;
   final String? responseMode;
+  // DESIGN 9a.13 - the CELL's response_type (the fragment cells).
+  final String? responseType;
   final String? claims;
   final String? acrValues;
   final String? resource;
@@ -55,6 +57,7 @@ class ConsentPage extends StatefulWidget {
     this.consentFlow,
     this.nonce,
     this.responseMode,
+    this.responseType,
     this.claims,
     this.acrValues,
     this.resource,
@@ -191,6 +194,7 @@ class _ConsentPageState extends State<ConsentPage> {
         selectedAccountIds: _selectedAccountIds.toList(),
         nonce: widget.nonce,
         responseMode: widget.responseMode,
+        responseType: widget.responseType,
         claims: widget.claims,
         acrValues: widget.acrValues,
         resource: widget.resource,
@@ -253,6 +257,7 @@ class _ConsentPageState extends State<ConsentPage> {
         selectedAccountIds: const [],
         nonce: widget.nonce,
         responseMode: widget.responseMode,
+        responseType: widget.responseType,
         claims: widget.claims,
         acrValues: widget.acrValues,
         resource: widget.resource,
