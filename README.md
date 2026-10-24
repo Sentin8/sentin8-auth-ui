@@ -1,4 +1,8 @@
 # Sentin8 Auth Hosted UI (auth-ui) - Overview
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](../LICENSE)
+[![Built with Flutter](https://img.shields.io/badge/Built%20with-Flutter-blue.svg)](https://flutter.dev/)
+[![Docs](https://img.shields.io/badge/docs/read-3aa757.svg)](https://sentin8.dev/docs/services/auth-ui)
+[![Website](https://img.shields.io/badge/website-sentin8.dev-1a73e8.svg)](https://sentin8.dev)
 
 > Audience: anyone evaluating or onboarding to the Sentin8:Auth hosted sign-in
 > experience. For wire-level detail read `DESIGN.md`; for the business view of
