@@ -1,4 +1,4 @@
-# README.md: Sentin8 Auth Hosted UI (auth-ui) - Overview
+# Sentin8 Auth Hosted UI (auth-ui) - Overview
 
 > Audience: anyone evaluating or onboarding to the Sentin8:Auth hosted sign-in
 > experience. For wire-level detail read `DESIGN.md`; for the business view of
