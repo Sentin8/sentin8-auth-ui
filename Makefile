@@ -120,7 +120,7 @@ check: lint test ## lint + tests
 clean: ## flutter clean
 	@flutter clean
 	@rm -rf build/
-
+	@rm -rf .run .run/logs .tmp
 # Profile wrappers — make foo-release == RELEASE=--release make foo (§4.5).
 $(PROFILED:%=%-release):
 	@$(MAKE) --no-print-directory RELEASE=--release $(patsubst %-release,%,$@)
