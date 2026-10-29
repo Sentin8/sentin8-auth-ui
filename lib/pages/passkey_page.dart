@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Passkey enrollment/verification page — Story 1.2.6
+// Passkey enrollment/verification page - Story 1.2.6
 //
 // Provides a UI for enrolling a new passkey (WebAuthn) and verifying with
 // an existing passkey during sign-in. Uses the browser's WebAuthn API
@@ -41,7 +41,7 @@ class _PasskeyEnrollPageState extends State<PasskeyEnrollPage> {
     });
 
     try {
-      // 1. Begin enrollment — fetch challenge from server.
+      // 1. Begin enrollment - fetch challenge from server.
       final beginResp = await web.window.fetch(
         '/v1/passkey/enroll/begin'.toJS,
         web.RequestInit(
@@ -281,7 +281,7 @@ Uint8List _base64UrlDecode(String b64url) {
 /// Call navigator.credentials.create() via JS interop.
 Future<Map<String, dynamic>> _webAuthnCreate(Map<String, dynamic> options) async {
   // Use the browser's WebAuthn API via JS interop.
-  // This is a simplified implementation — a full implementation would
+  // This is a simplified implementation - a full implementation would
   // use the `web` package's WebAuthn bindings or a JS interop wrapper.
   final jsOptions = jsonEncode(options).jsify();
   final credPromise = web.window

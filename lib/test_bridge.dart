@@ -3,10 +3,10 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Test bridge for e2e automation.
+// Sentin8 Auth UI - Test bridge for e2e automation.
 //
-// E2e tests interact with the app through the UI — clicking buttons,
-// typing into fields — but Flutter CanvasKit's HTML input overlays are
+// E2e tests interact with the app through the UI - clicking buttons,
+// typing into fields - but Flutter CanvasKit's HTML input overlays are
 // unreliable for Playwright's fill(). These bridge functions set
 // TextEditingController values directly in Dart and call the same
 // widget methods as clicking the submit button. No direct API calls

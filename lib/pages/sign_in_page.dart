@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Sign In page.
+// Sentin8 Auth UI - Sign In page.
 //
 // Full implementation with:
 //   - Email + password form
@@ -80,7 +80,7 @@ class _SignInPageState extends State<SignInPage> {
     _api = AuthApi(baseUrl: _baseUrl());
     // Register a test bridge handler so e2e tests can trigger sign-in
     // by calling window.sentin8TestSignIn() from JavaScript. This fills
-    // the form controllers and calls _signIn() — the same code path
+    // the form controllers and calls _signIn() - the same code path
     // as clicking the submit button.
     setSignInHandler((email, password) {
       _emailCtrl.text = email;
@@ -134,9 +134,9 @@ class _SignInPageState extends State<SignInPage> {
         return;
       }
 
-      // Success — if this is an OAuth flow (client_id present), check
+      // Success - if this is an OAuth flow (client_id present), check
       // whether consent is required. The consent flow detection is
-      // handled by Sentin8:Auth's /oauth/authorize endpoint — when a
+      // handled by Sentin8:Auth's /oauth/authorize endpoint - when a
       // consent flow matches the requested scopes, the authorize
       // redirect includes a `consent_flow` param. The sign-in page
       // passes it through to the consent page. If no consent_flow is
@@ -188,7 +188,7 @@ class _SignInPageState extends State<SignInPage> {
   /// the BFF callback URL.
   Future<void> _completeOAuthFlow(String userId, String sessionToken) async {
     if (widget.clientId == null || widget.clientId!.isEmpty) {
-      // No OAuth context — redirect home
+      // No OAuth context - redirect home
       _redirectAfterAuth(widget.redirectUri);
       return;
     }
@@ -434,7 +434,7 @@ class _SignInPageState extends State<SignInPage> {
               ),
             ),
             const SizedBox(height: Sentin8Spacing.xs),
-            // Powered by Sentin8 — outside the form panel
+            // Powered by Sentin8 - outside the form panel
             const PoweredBySentin8(),
           ],
         ),

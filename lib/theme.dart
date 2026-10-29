@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Design system theme.
+// Sentin8 Auth UI - Design system theme.
 // Implements the design system defined in design/sentin8-design-system.md.
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -32,7 +32,7 @@ TextTheme? sentin8TextThemeForFont(String fontFamily, TextTheme base) {
   try {
     return GoogleFonts.getTextTheme(family, base);
   } catch (_) {
-    // Unknown font family — fall back to the system font but still set the
+    // Unknown font family - fall back to the system font but still set the
     // fontFamily hint so a web @font-face can pick it up if preloaded.
     return base.copyWith(
       displayLarge: base.displayLarge?.copyWith(fontFamily: family),
@@ -362,7 +362,7 @@ Color iconMutedFor(BuildContext context) {
       : Sentin8Colors.textMuted;
 }
 
-/// Glass panel — the primary surface element for auth forms.
+/// Glass panel - the primary surface element for auth forms.
 class GlassPanel extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
@@ -482,7 +482,7 @@ class Sentin8Logo extends StatelessWidget {
   }
 }
 
-/// "Powered by" footer — shows the Sentin8 icon + "Sentin8" wordmark.
+/// "Powered by" footer - shows the Sentin8 icon + "Sentin8" wordmark.
 /// Used at the bottom of sign-in and sign-up forms.
 class PoweredBySentin8 extends StatelessWidget {
   const PoweredBySentin8({super.key});

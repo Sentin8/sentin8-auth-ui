@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Branding provider — fetches merged org+env branding from the Auth
+// Branding provider - fetches merged org+env branding from the Auth
 // server and exposes it to the Flutter UI.
 //
 // The Auth server resolves the tenant from TLS headers and queries

@@ -3,21 +3,21 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Device approval page (RFC 8628 §3.3).
+// Sentin8 Auth UI - Device approval page (RFC 8628 §3.3).
 //
-// Story DEVUI-1.1 — hosted device-verification page for `sentin8-cli signin`.
+// Story DEVUI-1.1 - hosted device-verification page for `sentin8-cli signin`.
 //
 // The CLI's device flow directs the operator to
 // `/device?user_code=XXXX-XXXX` (`verification_uri_complete`). This page:
-//   1. Checks for an existing session (GET /v1/session) — a signed-in user
+//   1. Checks for an existing session (GET /v1/session) - a signed-in user
 //      approves immediately with one click.
 //   2. Otherwise renders the email/password form; on success the session
 //      token from the sign-in response authorizes the verify call
 //      (`Authorization: Bearer`, CSRF-exempt per SEC-2.4.4).
-//   3. Calls POST /device/verify with only the `user_code` — the approving
+//   3. Calls POST /device/verify with only the `user_code` - the approving
 //      user/env are stamped server-side from the session (SEC-2.1.4).
 //   4. Shows the terminal state; the CLI polls `/oauth/token` independently
-//      and completes on its own — nothing is navigated away.
+//      and completes on its own - nothing is navigated away.
 //
 // Design: design/sentin8-sentin8-auth-technical-design.md §13.5 §5.1a.
 import 'package:web/web.dart' as web;
@@ -27,7 +27,7 @@ import '../branding_provider.dart';
 import '../api.dart';
 
 class DevicePage extends StatefulWidget {
-  /// The user_code from `?user_code=` — empty means the URL was malformed.
+  /// The user_code from `?user_code=` - empty means the URL was malformed.
   final String userCode;
 
   const DevicePage({super.key, required this.userCode});
@@ -53,7 +53,7 @@ class _DevicePageState extends State<DevicePage> {
   void initState() {
     super.initState();
     _api = AuthApi(baseUrl: web.window.location.origin);
-    // Defer past the first frame — calling the HTTP client synchronously
+    // Defer past the first frame - calling the HTTP client synchronously
     // from initState on Flutter web leaves the future unresolvable (the
     // request completes at the network layer but the Dart future never
     // resumes), wedging the page on its loading state forever.
@@ -69,12 +69,12 @@ class _DevicePageState extends State<DevicePage> {
     super.dispose();
   }
 
-  /// Check for an existing session — a signed-in operator approves directly.
+  /// Check for an existing session - a signed-in operator approves directly.
   Future<void> _checkSession() async {
     if (widget.userCode.isEmpty) {
       setState(() {
         _isLoading = false;
-        _error = 'This device-approval link is malformed — no code was provided.';
+        _error = 'This device-approval link is malformed - no code was provided.';
       });
       return;
     }
@@ -87,7 +87,7 @@ class _DevicePageState extends State<DevicePage> {
         });
       }
     } catch (_) {
-      // No session — the operator signs in below.
+      // No session - the operator signs in below.
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -117,7 +117,7 @@ class _DevicePageState extends State<DevicePage> {
     }
   }
 
-  /// Shared approval path — `sessionToken` is the freshly-minted session
+  /// Shared approval path - `sessionToken` is the freshly-minted session
   /// token after sign-in (Bearer path) or null (cookie path).
   Future<void> _approve(String? sessionToken) async {
     setState(() { _isApproving = true; _error = null; });
@@ -175,7 +175,7 @@ class _DevicePageState extends State<DevicePage> {
       );
     }
 
-    // Approved — the CLI picks it up on its next poll.
+    // Approved - the CLI picks it up on its next poll.
     if (_status == 'approved') {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -194,7 +194,7 @@ class _DevicePageState extends State<DevicePage> {
       );
     }
 
-    // Malformed URL / expired code — terminal error, nothing to do.
+    // Malformed URL / expired code - terminal error, nothing to do.
     if (_status == 'expired' || (widget.userCode.isEmpty && _error != null)) {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -213,7 +213,7 @@ class _DevicePageState extends State<DevicePage> {
       );
     }
 
-    // Pending — code display + approve (session) or sign-in-then-approve.
+    // Pending - code display + approve (session) or sign-in-then-approve.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -228,7 +228,7 @@ class _DevicePageState extends State<DevicePage> {
           style: Sentin8Text.body,
         ),
         const SizedBox(height: Sentin8Spacing.md),
-        // The code being approved — cross-check against the CLI output.
+        // The code being approved - cross-check against the CLI output.
         Container(
           padding: const EdgeInsets.all(Sentin8Spacing.md),
           decoration: BoxDecoration(

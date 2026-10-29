@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — EUDI Wallet sign-in page (EUDI.1.5).
+// Sentin8 Auth UI - EUDI Wallet sign-in page (EUDI.1.5).
 //
 // The wallet sign-in front-channel: "Sign in with wallet" button →
 // GET /oauth/authorize?prompt=wallet (Auth returns the signed OID4VP
@@ -14,7 +14,7 @@
 //
 // Shows the binding context (requested credentials, minimum LoA) from
 // GET /v1/auth/wallet/metadata BEFORE rendering the QR (phishing
-// resistance — the user verifies what they are about to disclose).
+// resistance - the user verifies what they are about to disclose).
 // Branding-aware (§4.3 tenant branding).
 //
 // Design: design/sentin8-architecture-principles.md §4.12.5 +
@@ -74,7 +74,7 @@ class _WalletSignInPageState extends State<WalletSignInPage> {
       );
       if (!mounted) return;
       if (!resp.containsKey("nonce")) {
-        setState(() => _error = 'Wallet flow did not start — try again.');
+        setState(() => _error = 'Wallet flow did not start - try again.');
         return;
       }
       setState(() => _isWaiting = true);

@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth Hosted UI — Flutter Web app.
+// Sentin8 Auth Hosted UI - Flutter Web app.
 //
 // This Flutter Web app is embedded in the Auth Rust server and served
 // from the same hostname as the OAuth/FAPI endpoints.
@@ -50,7 +50,7 @@ void main() {
   // Register the test bridge on window so e2e tests can trigger
   // form submissions by calling window.sentin8TestSignUp/SignIn.
   // These functions call the same Flutter widget code as clicking
-  // the submit button — no direct API calls.
+  // the submit button - no direct API calls.
   registerTestBridge();
   AuthUiLogger.info('auth-ui app starting', metadata: {'correlation_id': sessionCorrelationId});
   runApp(const AuthApp());
@@ -179,21 +179,21 @@ class _AuthApp extends StatelessWidget {
         return _page(const AccountRecoveryPage(), settings);
 
       case 'device':
-        // Device-approval page (RFC 8628 §3.3, DEVUI-1.1) — the CLI device
+        // Device-approval page (RFC 8628 §3.3, DEVUI-1.1) - the CLI device
         // flow sends the operator here with ?user_code=. Rendered even
         // without a code so a malformed link shows a terminal error state
         // instead of a context-less sign-in form.
         return _page(DevicePage(userCode: q['user_code'] ?? ''), settings);
 
       case 'ciba':
-        // /ciba/assisted/{auth_req_id} — Assisted Login page (Story 1.1.70)
+        // /ciba/assisted/{auth_req_id} - Assisted Login page (Story 1.1.70)
         if (segments.length >= 3 && segments[1] == 'assisted') {
           return _page(AssistedLoginPage(authReqId: segments[2]), settings);
         }
         return _page(const SignInPage(), settings);
 
       case 'wallet':
-        // /wallet — EUDI wallet sign-in (EUDI.1.5, §5.2f).
+        // /wallet - EUDI wallet sign-in (EUDI.1.5, §5.2f).
         return _page(const WalletSignInPage(), settings);
 
       default:

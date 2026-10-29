@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Email verification page.
+// Sentin8 Auth UI - Email verification page.
 //
 // Verifies an email address using a token from the verification email link.
 // Calls POST /v1/email/verify.

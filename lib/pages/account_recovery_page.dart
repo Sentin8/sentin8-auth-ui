@@ -3,10 +3,10 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Account recovery page.
+// Sentin8 Auth UI - Account recovery page.
 //
 // Allows users who have lost access to their authenticator device to
-// initiate an account recovery flow. This is a P2 feature — the page
+// initiate an account recovery flow. This is a P2 feature - the page
 // is a placeholder that explains the recovery process.
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';

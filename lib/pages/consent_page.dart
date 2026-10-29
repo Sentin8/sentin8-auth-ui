@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — OAuth consent screen.
+// Sentin8 Auth UI - OAuth consent screen.
 //
 // Displays the OAuth client name, requested scopes, and asks the user
 // to approve or deny the authorization. When a consent flow is detected
@@ -83,10 +83,10 @@ class _ConsentPageState extends State<ConsentPage> {
   // Determined by the presence of a `consent_flow` query param (set by
   // Sentin8:Auth's authorize redirect when a consent flow matches).
   // The platform-default consent page (no consent_flow) shows only OIDC
-  // standard scopes — no vertical knowledge needed.
+  // standard scopes - no vertical knowledge needed.
   bool get _hasConsentFlow => widget.consentFlow != null && widget.consentFlow!.isNotEmpty;
 
-  // OIDC standard scope descriptions — these are platform-builtin (OIDC spec,
+  // OIDC standard scope descriptions - these are platform-builtin (OIDC spec,
   // not vertical-specific). All other scope descriptions come from the
   // vertical service's RFW consent page definition (fetched via
   // GET /v1/auth/consent/ui). For the platform-default consent page (no
@@ -144,7 +144,7 @@ class _ConsentPageState extends State<ConsentPage> {
         }).where((id) => id.isNotEmpty).toSet();
       });
     } catch (_) {
-      // Non-fatal — the customer can still approve without selecting accounts.
+      // Non-fatal - the customer can still approve without selecting accounts.
     } finally {
       if (mounted) setState(() => _accountsLoading = false);
     }

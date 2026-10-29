@@ -3,14 +3,14 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Visual regression tests for Auth UI pages — Story 1.2.14
+// Visual regression tests for Auth UI pages - Story 1.2.14
 //
 // Tests that each page renders correctly with default branding and
 // with custom org branding (primary color, accent color, organization
 // name, logo URL, sign-in text).
 //
 // NOTE on package name: the pubspec package is `sentin8_auth_ui` (not
-// `auth_ui`) — imports below must match. These tests run on the chrome
+// `auth_ui`) - imports below must match. These tests run on the chrome
 // platform (`flutter test --platform chrome`) because the app libs are
 // web-coupled (`package:web` / `dart:js_interop`); `make test-flutter`
 // handles this (see Makefile).
@@ -24,7 +24,7 @@ import 'package:sentin8_auth_ui/branding_provider.dart';
 import 'package:sentin8_auth_ui/theme.dart';
 import 'package:sentin8_auth_ui/pages/sign_in_page.dart';
 
-/// Pump a bare SignInPage under the given branding — the app shell
+/// Pump a bare SignInPage under the given branding - the app shell
 /// (`AuthApp`) touches `window.location` and fetches branding from the
 /// Auth server, which does not exist under the test harness. Pages read
 /// branding via `BrandingProvider.of(context)`, so a bare page + explicit
@@ -47,7 +47,7 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  group('Auth UI — Visual regression tests', () {
+  group('Auth UI - Visual regression tests', () {
     testWidgets('Sign In page renders with default branding', (tester) async {
       await tester.pumpWidget(brandingHarness(const Branding()));
       await tester.pumpAndSettle();

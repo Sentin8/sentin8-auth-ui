@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Password reset confirmation page.
+// Sentin8 Auth UI - Password reset confirmation page.
 //
 // User enters a new password using a reset token from the email link.
 // Calls POST /v1/password/reset-confirm.

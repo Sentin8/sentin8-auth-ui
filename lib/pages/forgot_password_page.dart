@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Password reset request page.
+// Sentin8 Auth UI - Password reset request page.
 //
 // User enters their email and a reset link is sent.
 // Calls POST /v1/password/reset-request.
@@ -44,7 +44,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       await api.requestPasswordReset(_emailCtrl.text);
       setState(() => _sent = true);
     } catch (e) {
-      // Don't reveal whether the email exists — show success anyway
+      // Don't reveal whether the email exists - show success anyway
       setState(() => _sent = true);
     } finally {
       if (mounted) setState(() => _isLoading = false);

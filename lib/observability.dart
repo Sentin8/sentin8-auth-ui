@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Auth UI observability — structured logging, metrics, traces, alerts.
+// Auth UI observability - structured logging, metrics, traces, alerts.
 //
 // All logs carry correlation IDs for traceability across the Flutter →
 // Auth Rust server boundary. Correlation IDs are generated on the
@@ -19,7 +19,7 @@ import 'dart:math';
 /// stamped on every outgoing request as `x-sentin8-correlation-id`.
 ///
 /// To track a sub-flow within a session (e.g. "sign in" → "verify MFA"),
-/// callers can pass an explicit [correlationId] to API helpers — the
+/// callers can pass an explicit [correlationId] to API helpers - the
 /// default behaviour reuses the session-level ID.
 String _sessionCorrelationId = _newCorrelationId();
 

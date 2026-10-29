@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — MFA verification page (TOTP input).
+// Sentin8 Auth UI - MFA verification page (TOTP input).
 //
 // Presents a 6-digit code input for TOTP-based MFA verification.
 // Calls POST /v1/mfa/verify with the code and session ID.
@@ -54,7 +54,7 @@ class _MfaPageState extends State<MfaPage> {
       final api = AuthApi(baseUrl: web.window.location.origin);
       await api.verifyMfa(_code, sessionId: widget.sessionId);
 
-      // Success — redirect
+      // Success - redirect
       if (widget.redirectUri != null && widget.redirectUri!.isNotEmpty) {
         web.window.location.href = widget.redirectUri!;
       } else {

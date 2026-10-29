@@ -3,9 +3,9 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Assisted Login page.
+// Sentin8 Auth UI - Assisted Login page.
 //
-// Story 1.1.70 — CIBA Assisted Login front-channel page.
+// Story 1.1.70 - CIBA Assisted Login front-channel page.
 //
 // The customer opens the link forwarded by the staff member (SMS / email /
 // QR). This page:
@@ -14,7 +14,7 @@
 //   2. Checks if the customer has a session cookie (GET /v1/session).
 //      - If yes: shows a "Confirm" button → POST /v1/ciba/assisted/{id}/complete.
 //      - If no: shows the sign-in form → on success → POST complete.
-//   3. On success: shows "You are authenticated — eTeller can proceed".
+//   3. On success: shows "You are authenticated - eTeller can proceed".
 //   4. On expired/denied: shows an error.
 //
 // Design: design/sentin8-auth-technical-design.md §5.2d
@@ -90,7 +90,7 @@ class _AssistedLoginPageState extends State<AssistedLoginPage> {
           });
         }
       } catch (_) {
-        // No session — customer needs to sign in.
+        // No session - customer needs to sign in.
       }
     } on AuthApiException catch (e) {
       setState(() {
@@ -225,7 +225,7 @@ class _AssistedLoginPageState extends State<AssistedLoginPage> {
       );
     }
 
-    // Pending — show the request details + sign-in or confirm.
+    // Pending - show the request details + sign-in or confirm.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

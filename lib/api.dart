@@ -3,17 +3,17 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — API client for Auth server endpoints.
+// Sentin8 Auth UI - API client for Auth server endpoints.
 //
 // Calls the Auth Rust server's frontend API endpoints:
-//   POST /v1/sign-in   — email/password authentication
-//   POST /v1/sign-up   — customer registration
-//   POST /v1/sign-out   — session termination
-//   GET  /v1/session    — return current session from cookie
-//   POST /v1/mfa/verify — MFA verification (TOTP)
-//   POST /v1/password/reset-request — password reset request
-//   POST /v1/password/reset-confirm — password reset confirmation
-//   POST /v1/email/verify — email verification
+//   POST /v1/sign-in   - email/password authentication
+//   POST /v1/sign-up   - customer registration
+//   POST /v1/sign-out   - session termination
+//   GET  /v1/session    - return current session from cookie
+//   POST /v1/mfa/verify - MFA verification (TOTP)
+//   POST /v1/password/reset-request - password reset request
+//   POST /v1/password/reset-confirm - password reset confirmation
+//   POST /v1/email/verify - email verification
 //
 // Every request carries an `x-sentin8-correlation-id` header so the
 // downstream Rust `sentin8-middleware::correlation_id` middleware can
@@ -28,7 +28,7 @@ class AuthApi {
   final http.Client _client;
 
   /// Session token id of the RESTORED session (from `GET /v1/session`)
-  /// or of the session established by the most recent `signIn` — both
+  /// or of the session established by the most recent `signIn` - both
   /// feed the `X-Sentin8-CSRF` header on cookie-authenticated mutations
   /// (SEC-2.4.4); Bearer paths ignore it. Set by `getSession()` and by
   /// `signIn` (AUTH-UI-4: a fresh sign-in must arm the CSRF header for
@@ -93,7 +93,7 @@ class AuthApi {
     }
     _record('POST', '/v1/sign-in', res.statusCode, sw.elapsedMilliseconds);
     final body = _decode(res);
-    // AUTH-UI-4 — record the just-established session's token id so the
+    // AUTH-UI-4 - record the just-established session's token id so the
     // next cookie-authenticated mutation carries a valid `X-Sentin8-CSRF`
     // (SEC-2.4.4). Without this, the CIBA assisted-login `complete` call
     // made immediately after sign-in failed 403.
@@ -131,7 +131,7 @@ class AuthApi {
     return SignUpResponse.fromJson(body);
   }
 
-  /// Sign out — terminate the current session.
+  /// Sign out - terminate the current session.
   Future<void> signOut() async {
     final sw = Stopwatch()..start();
     final res = await _client.post(
@@ -162,7 +162,7 @@ class AuthApi {
     return session;
   }
 
-  /// Approve a device sign-in (RFC 8628 §3.3) — `POST /device/verify`.
+  /// Approve a device sign-in (RFC 8628 §3.3) - `POST /device/verify`.
   ///
   /// SEC-2.1.4: the approving user comes from the session server-side, so
   /// the body carries only the `user_code`. When `sessionToken` is passed
@@ -466,7 +466,7 @@ class SessionResponse {
   final String email;
   final String? firstName;
   final String? lastName;
-  /// Session token id — the CSRF header value (SEC-2.4.4) for
+  /// Session token id - the CSRF header value (SEC-2.4.4) for
   /// cookie-authenticated mutations after a page reload. Empty when the
   /// server did not include it (pre-1.2.2 responses).
   final String sessionToken;

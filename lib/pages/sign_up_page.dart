@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:AuthUI
 // SPDX-License-Identifier: Apache-2.0
 
-// Sentin8 Auth UI — Sign Up page.
+// Sentin8 Auth UI - Sign Up page.
 //
 // Full registration form with:
 //   - First name, last name, email, password, confirm password
@@ -49,7 +49,7 @@ class _SignUpPageState extends State<SignUpPage> {
     super.initState();
     // Register a test bridge handler so e2e tests can trigger sign-up
     // by calling window.sentin8TestSignUp() from JavaScript. This fills
-    // the form controllers and calls _signUp() — the same code path
+    // the form controllers and calls _signUp() - the same code path
     // as clicking the submit button.
     setSignUpHandler((email, firstName, lastName, password) {
       _emailCtrl.text = email;
@@ -272,7 +272,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         : const Text('Create account'),
                   ),
                   const SizedBox(height: Sentin8Spacing.lg),
-                  // Sign in link — preserve OAuth context so the flow continues
+                  // Sign in link - preserve OAuth context so the flow continues
                   // after the user signs in with their existing credentials.
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -302,7 +302,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ),
           const SizedBox(height: Sentin8Spacing.xs),
-          // Powered by Sentin8 — outside the form panel
+          // Powered by Sentin8 - outside the form panel
           const PoweredBySentin8(),
         ],
       ),
