@@ -145,7 +145,15 @@ class _AuthApp extends StatelessWidget {
         ), settings);
 
       case 'mfa':
-        return _page(MfaPage(sessionId: params['session_id'], redirectUri: params['redirect_uri']), settings);
+        // MFA step - carries the sign-in response's `pending_token_id`
+        // (the needs_mfa challenge capability, MFA-SYNC): consuming the
+        // challenge at /v1/mfa/verify is what activates the session.
+        return _page(
+            MfaPage(
+              pendingTokenId: params['pending_token_id'],
+              redirectUri: params['redirect_uri'],
+            ),
+            settings);
 
       case 'forgot-password':
         return _page(const ForgotPasswordPage(), settings);

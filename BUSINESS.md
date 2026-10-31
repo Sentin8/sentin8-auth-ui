@@ -25,12 +25,12 @@
 |---|---|
 | Password sign-in | Single sign-in surface reused by console, CLI (device flow), and any OAuth client. |
 | Self-service registration | Sign-up with name, email, password with strength metering and terms acceptance. |
-| MFA verification | Six-digit TOTP challenge step when an account requires it. |
+| MFA verification | Six-digit TOTP challenge step when an account requires it; in the device-approval journey the code step is embedded in the same page. |
 | Password self-service | Forgotten-password request and token-based reset completion. |
 | Email verification | Automated token verification page for account confirmation links. |
 | OAuth consent | Consent screen showing application identity and scope descriptions, with approval/denial and callback redirection. |
 | Data-sharing account consent | FDX-style flow where the user selects which accounts a data aggregator may access. |
-| Device approval | Human approval page for CLI device-code sign-in (user code entry). |
+| Device approval | Human approval/denial page for CLI device-code sign-in: the user opens the verification URL on a second device, either types the code shown by the CLI or follows the code-carrying link, signs in (including MFA when required), and then explicitly approves or denies. |
 | Assisted login (CIBA) | Human confirmation step for operator/teller-initiated logins, including sign-in when required. |
 | Wallet sign-in | Sign-in via EUDI digital identity wallet with trusted-issuer transparency and password fallback. |
 | Tenant branding | Per-tenant logo, colors, fonts, sign-in text and theme mode applied at runtime. |
@@ -60,7 +60,9 @@
 | Consent | Scope transparency | Scopes are shown with human descriptions; standard identity scopes get fixed explanations. |
 | Consent | Account selection | Consumers see masked account numbers and approve exactly the accounts they check. |
 | Consent | Denial | Denying consent returns the user to the relying client with a denial result, not an error page. |
-| Device approval | Code binding | Only the user code presented in the link can be approved; expired codes produce a terminal state. |
+| Device approval | Code binding | The user verifies the code shown by the CLI (typed at the page or carried by the link) before acting; expired codes produce a terminal state. |
+| Device approval | Explicit decision | Approve and Deny are separate explicit actions; the CLI is told the outcome on its next poll either way. |
+| Device approval | MFA honesty | When the approving account requires TOTP, the code step is completed on the same page before the decision is sent - a password alone can never approve a device. |
 | Assisted login | Binding transparency | The user sees the binding message and short code the operator gave them before confirming. |
 | Wallet | Issuer transparency | The number of trusted issuers is disclosed before the wallet interaction starts. |
 | Branding | Tenant identity | Logo, colors and sign-in text reflect the visiting tenant, with platform fallbacks when unset. |
@@ -76,6 +78,7 @@ results of Sentin8:Auth flows:
 | Consent grant | Data-sharing or app authorization proceeds with the selected accounts. |
 | Consent denial | Client receives `access_denied` with its own `state`. |
 | Device approval | The CLI session continues on the user's device. |
+| Device denial | The CLI is told the user denied the request and stops asking. |
 | Assisted login confirmation | The operator-initiated login completes; refusal leaves the customer unauthenticated. |
 | Wallet authentication | Session established for the wallet-presented identity. |
 

@@ -159,29 +159,53 @@ sequenceDiagram
 
 ### 2.4 Request Lifecycle - Device approval (RFC 8628)
 
+The device page is a state machine over the verification journey:
+`enter-code → sign-in (if needed) → MFA (if required) → confirm →
+terminal(approved|denied|expired)`. Both entry modes are supported: a
+`verification_uri_complete` link (`?user_code=XXXX-XXXX`) AND manual code
+entry at the bare `verification_uri` (the RFC's canonical typed-code
+interaction - the page shows its own code input when the URL carries no
+`user_code`).
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant B as Browser
     participant D as DevicePage
     participant A as Auth API
-    B->>D: GET /device?user_code=...
+    B->>D: GET /device (with or without ?user_code=)
+    alt user_code absent
+        D->>B: render code input (uppercase-normalized XXXX-XXXX)
+        B->>D: user types code
+    end
     D-->>+A: GET /v1/session (deferred 50ms, cookie auth)
-    alt session exists
+    alt active session
         A-->>D: {session_token, user_id}
-        D->>A: POST /device/verify {user_code} (cookie + CSRF)
+        D->>B: show code + Approve / Deny buttons
     else no session
         D->>B: render inline sign-in form
         B->>D: credentials
         D->>A: POST /v1/sign-in {email, password}
-        A-->>D: {token}
-        D->>A: POST /device/verify {user_code} (Authorization: Bearer token)
+        alt needs_mfa (status == "needs_mfa")
+            A-->>D: {status:"needs_mfa", pending_token_id, factor_id}
+            D->>B: render TOTP input
+            B->>D: 6-digit code
+            D->>A: POST /v1/mfa/verify {code, pending_token_id}
+            A-->>D: 200 {status:"active", session_cookie}
+            Note over D: cookie is now set; approval proceeds cookie-authenticated
+        else ok
+            A-->>D: {token}
+        end
     end
-    alt approved
-        A-->>D: 2xx
-        D->>B: terminal "approved" state
+    D->>A: POST /device/verify {user_code, action} (cookie+CSRF or Bearer)
+    alt action=approve → 2xx
+        D->>B: terminal "approved" state (CLI completes on next poll)
+    else action=deny → 2xx
+        D->>B: terminal "denied" state (CLI poll answers access_denied)
     else 404
         D->>B: terminal "expired/invalid" state
+    else 401 mfa required
+        D->>B: render TOTP step (pending_mfa session rejected)
     end
 ```
 
@@ -227,16 +251,16 @@ session token id is known; GETs do not):
 
 | Endpoint | Use | Auth |
 |---|---|---|
-| `POST /v1/sign-in` {email, password} | credential sign-in | anonymous → cookie session |
+| `POST /v1/sign-in` {email, password} | credential sign-in; response `ok` (token, cookie) or `needs_mfa` (pending_token_id, factor_id) | anonymous → cookie session |
 | `POST /v1/sign-up` {email, password, first_name?, last_name?} | registration | anonymous |
 | `GET /v1/session` | session probe (device, assisted, wallet polling) | cookie |
-| `POST /v1/mfa/verify` {code, session_id} | TOTP step | session token |
+| `POST /v1/mfa/verify` {code, pending_token_id} | TOTP step (sign-in activation; consumes the pending challenge and activates the session) | pending session token |
 | `POST /v1/password/reset-request` {email} | reset email send | anonymous (always-success response) |
 | `POST /v1/password/reset-confirm` {token, password} | reset completion | anonymous token |
 | `POST /v1/email/verify` {token} | email verification | anonymous token |
 | `POST /oauth/authorize/continue` {..., selected_account_ids?} | mint authorization code | session + CSRF |
 | `GET /v1/auth/consent/accounts?user_id&session_token` | FDX account list for consent | session token |
-| `POST /device/verify` {user_code} | device-code approval | cookie+CSRF or Bearer |
+| `POST /device/verify` {user_code, action: approve\|deny} | device-code approval/denial | cookie+CSRF or Bearer; active session only (pending_mfa → 401) |
 | `GET /v1/ciba/assisted/{auth_req_id}` / `POST .../complete` | Assisted Login read/confirm | cookie+CSRF |
 | `GET /v1/auth/wallet/metadata` | trusted issuer info for wallet UI | anonymous |
 | `GET /v1/branding` | tenant branding | cookie, credentials include |
@@ -244,8 +268,9 @@ session token id is known; GETs do not):
 Client-side browser navigation surfaces (not API calls, part of flows):
 `/oauth/authorize?...` (authorization request, PAR-conserving), final
 `redirect_uri?code=&state=` (or `?error=access_denied`), in-app step URLs
-(`/mfa?sessionId=`, `/consent?...`, `/sign-up?...`, `/device?user_code=`,
-`/ciba/assisted/{id}`, `/wallet`).
+(`/mfa?sessionId=`, `/consent?...`, `/sign-up?...`, `/device` (typed code
+entry) or `/device?user_code=` (complete-link), `/ciba/assisted/{id}`,
+`/wallet`).
 
 Static hosting surface (Auth server): `ServeDir` over the built bundle with
 SPA fallback to `index.html`, so any unknown path (e.g. deep link) renders the

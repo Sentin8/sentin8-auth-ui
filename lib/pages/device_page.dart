@@ -5,29 +5,37 @@
 
 // Sentin8 Auth UI - Device approval page (RFC 8628 §3.3).
 //
-// Story DEVUI-1.1 - hosted device-verification page for `sentin8-cli signin`.
+// The CLI's device flow directs the operator to the verification URI:
+// either the bare `/device` (the RFC's canonical typed-code entry - the
+// CLI displays the code, the user types it here) or the
+// `verification_uri_complete` link (`/device?user_code=XXXX-XXXX`).
 //
-// The CLI's device flow directs the operator to
-// `/device?user_code=XXXX-XXXX` (`verification_uri_complete`). This page:
-//   1. Checks for an existing session (GET /v1/session) - a signed-in user
-//      approves immediately with one click.
-//   2. Otherwise renders the email/password form; on success the session
-//      token from the sign-in response authorizes the verify call
-//      (`Authorization: Bearer`, CSRF-exempt per SEC-2.4.4).
-//   3. Calls POST /device/verify with only the `user_code` - the approving
+// The page is a state machine (auth-ui DESIGN §2.4):
+//   1. Resolve the code: typed at the page (uppercase-normalized) or
+//      carried by the URL.
+//   2. Check for an existing session (GET /v1/session) - a signed-in
+//      user decides immediately.
+//   3. Otherwise render the email/password form. A TOTP-enrolled
+//      account answers `needs_mfa` - the TOTP step is embedded in this
+//      page (a password alone can never decide a device, MFA-SYNC).
+//   4. POST /device/verify with `{user_code, action}` - the approving
 //      user/env are stamped server-side from the session (SEC-2.1.4).
-//   4. Shows the terminal state; the CLI polls `/oauth/token` independently
-//      and completes on its own - nothing is navigated away.
+//   5. Terminal states: approved, denied, expired/invalid. The CLI
+//      polls /oauth/token independently and completes on its own -
+//      nothing is navigated away.
 //
-// Design: design/sentin8-sentin8-auth-technical-design.md §13.5 §5.1a.
+// Design: auth DESIGN §2 (device lifecycle) §3 (MFA-SYNC); auth-ui
+// DESIGN §2.4.
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme.dart';
 import '../branding_provider.dart';
 import '../api.dart';
 
 class DevicePage extends StatefulWidget {
-  /// The user_code from `?user_code=` - empty means the URL was malformed.
+  /// The user_code from `?user_code=` - empty means the user opened the
+  /// bare verification URI and must type the code shown by the device.
   final String userCode;
 
   const DevicePage({super.key, required this.userCode});
@@ -39,15 +47,21 @@ class DevicePage extends StatefulWidget {
 class _DevicePageState extends State<DevicePage> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  final List<TextEditingController> _totpCtrls =
+      List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _totpFocus = List.generate(6, (_) => FocusNode());
   bool _isLoading = true;
-  bool _isApproving = false;
+  bool _isDeciding = false;
   bool _obscurePassword = true;
   String? _error;
-  String? _status; // null = pending, 'approved', 'denied', 'expired'
+  String? _status; // null = in flow, 'approved', 'denied', 'expired'
   bool _hasSession = false;
   String? _sessionEmail;
-  String? _sessionToken; // Bearer for the verify call when freshly signed in.
+  String? _pendingTokenId; // needs_mfa challenge capability.
   AuthApi? _api;
+
+  String get _totp => _totpCtrls.map((c) => c.text).join();
 
   @override
   void initState() {
@@ -66,18 +80,29 @@ class _DevicePageState extends State<DevicePage> {
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _codeCtrl.dispose();
+    for (final c in _totpCtrls) {
+      c.dispose();
+    }
+    for (final f in _totpFocus) {
+      f.dispose();
+    }
     super.dispose();
   }
 
-  /// Check for an existing session - a signed-in operator approves directly.
+  /// The code being decided on - either the URL-carried code or the value
+  /// typed into the entry field (uppercased; codes are case-insensitive
+  /// on entry, canonical on display).
+  String _resolvedCode() =>
+      widget.userCode.isNotEmpty ? widget.userCode : _codeCtrl.text.trim().toUpperCase();
+
+  /// Check for an existing session - a signed-in operator decides
+  /// directly. A pending-MFA session reads as "no session" server-side
+  /// (a pending row is not a session, MFA-SYNC) - the sign-in path below
+  /// handles the TOTP step. The session probe runs even for the typed-
+  /// code entry path so a signed-in user reaches the decision right
+  /// after typing the code.
   Future<void> _checkSession() async {
-    if (widget.userCode.isEmpty) {
-      setState(() {
-        _isLoading = false;
-        _error = 'This device-approval link is malformed - no code was provided.';
-      });
-      return;
-    }
     try {
       final session = await _api!.getSession();
       if (session != null) {
@@ -93,39 +118,84 @@ class _DevicePageState extends State<DevicePage> {
     }
   }
 
-  /// Approve with the existing session (cookie authenticates the request).
-  Future<void> _approveWithSession() async {
-    await _approve(null);
+  /// Decide with the existing session (cookie authenticates the request).
+  Future<void> _decideWithSession(String action) async {
+    await _decide(action, null);
   }
 
-  /// Sign in, then approve with the fresh session token (Bearer).
+  /// Sign in, then approve with the fresh session token (Bearer). A
+  /// TOTP-enrolled account needs the embedded MFA step first - the
+  /// decision is sent only after the session is ACTIVE.
   Future<void> _signInAndApprove() async {
     if (_emailCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) {
       setState(() => _error = 'Email and password are required');
       return;
     }
-    setState(() { _isApproving = true; _error = null; });
+    setState(() { _isDeciding = true; _error = null; });
     try {
       final res = await _api!.signIn(_emailCtrl.text, _passwordCtrl.text);
-      await _approve(res.token);
+      if (res.mfaRequired) {
+        // The needs_mfa contract (MFA-SYNC): NO active session exists yet.
+        // Hold the challenge capability and render the TOTP step;
+        // completing it activates the session (the verify response's
+        // set-cookie then authenticates the decision request).
+        setState(() {
+          _pendingTokenId = res.pendingTokenId;
+        });
+      } else {
+        await _decide('approve', res.token);
+      }
     } on AuthApiException catch (e) {
       setState(() => _error = _friendlyError(e));
     } catch (e) {
       setState(() => _error = 'Network error. Please try again.');
     } finally {
-      if (mounted) setState(() => _isApproving = false);
+      if (mounted) setState(() => _isDeciding = false);
     }
   }
 
-  /// Shared approval path - `sessionToken` is the freshly-minted session
-  /// token after sign-in (Bearer path) or null (cookie path).
-  Future<void> _approve(String? sessionToken) async {
-    setState(() { _isApproving = true; _error = null; });
+  /// Complete the embedded TOTP step: /v1/mfa/verify consumes the
+  /// challenge and ACTIVATES the session, then the decision is sent
+  /// cookie-authenticated.
+  Future<void> _verifyTotpAndDecide(String action) async {
+    if (_totp.length != 6) {
+      setState(() => _error = 'Please enter all 6 digits');
+      return;
+    }
+    setState(() { _isDeciding = true; _error = null; });
     try {
-      await _api!.verifyDevice(widget.userCode, sessionToken: sessionToken);
-      setState(() => _status = 'approved');
+      await _api!.verifyMfa(_totp, pendingTokenId: _pendingTokenId);
+      setState(() { _pendingTokenId = null; });
+      await _decide(action, null);
     } on AuthApiException catch (e) {
-      if (e.statusCode == 404) {
+      setState(() => _error =
+          e.statusCode == 401 ? 'Invalid code. Please try again.' : e.message);
+      for (final c in _totpCtrls) {
+        c.clear();
+      }
+      _totpFocus[0].requestFocus();
+    } catch (e) {
+      setState(() => _error = 'Network error. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isDeciding = false);
+    }
+  }
+
+  /// Shared decision path - `sessionToken` is the freshly-minted session
+  /// token after sign-in (Bearer path) or null (cookie path, including
+  /// the post-MFA activation where the verify response set the cookie).
+  Future<void> _decide(String action, String? sessionToken) async {
+    final code = _resolvedCode();
+    if (code.isEmpty) {
+      setState(() => _error = 'Enter the code shown on your device.');
+      return;
+    }
+    setState(() { _isDeciding = true; _error = null; });
+    try {
+      await _api!.verifyDevice(code, sessionToken: sessionToken, action: action);
+      setState(() => _status = action == 'deny' ? 'denied' : 'approved');
+    } on AuthApiException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 410) {
         setState(() {
           _status = 'expired';
           _error = 'This code has expired or was already used. Run the command again.';
@@ -136,7 +206,7 @@ class _DevicePageState extends State<DevicePage> {
     } catch (e) {
       setState(() => _error = 'Network error. Please try again.');
     } finally {
-      if (mounted) setState(() => _isApproving = false);
+      if (mounted) setState(() => _isDeciding = false);
     }
   }
 
@@ -144,6 +214,15 @@ class _DevicePageState extends State<DevicePage> {
     if (e.statusCode == 401) return 'Invalid email or password';
     if (e.statusCode == 403) return 'Account is locked or disabled';
     return e.message;
+  }
+
+  void _onTotpChanged(int index, String value) {
+    if (value.length == 1 && index < 5) {
+      _totpFocus[index + 1].requestFocus();
+    }
+    if (value.isEmpty && index > 0) {
+      _totpFocus[index - 1].requestFocus();
+    }
   }
 
   @override
@@ -194,8 +273,27 @@ class _DevicePageState extends State<DevicePage> {
       );
     }
 
-    // Malformed URL / expired code - terminal error, nothing to do.
-    if (_status == 'expired' || (widget.userCode.isEmpty && _error != null)) {
+    // Denied - the CLI is told on its next poll and stops.
+    if (_status == 'denied') {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Icon(Icons.block_outlined, size: 48, color: Sentin8Colors.errorCrimson),
+          const SizedBox(height: Sentin8Spacing.md),
+          Text('Device denied', textAlign: TextAlign.center, style: Sentin8Text.h2),
+          const SizedBox(height: Sentin8Spacing.sm),
+          Text(
+            'The request was denied. The CLI will stop asking. You can close this tab.',
+            textAlign: TextAlign.center,
+            style: Sentin8Text.body,
+          ),
+        ],
+      );
+    }
+
+    // Expired/invalid code - terminal error, nothing to do.
+    if (_status == 'expired') {
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -208,6 +306,62 @@ class _DevicePageState extends State<DevicePage> {
             _error ?? 'This code has expired or was already used. Run the command again.',
             textAlign: TextAlign.center,
             style: Sentin8Text.body,
+          ),
+        ],
+      );
+    }
+
+    // Code entry step - bare verification_uri (RFC 8628's canonical
+    // typed-code interaction): the CLI displays the code, the user types
+    // it here. A session is still resolved first so a signed-in user
+    // proceeds straight to the decision after entry.
+    if (_resolvedCode().isEmpty) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Sentin8Logo(size: 36, logoUrl: branding.logoUrl, logoIconUrl: branding.logoIconUrl),
+          const SizedBox(height: Sentin8Spacing.lg),
+          Text('Device Sign-In Request', textAlign: TextAlign.center, style: Sentin8Text.h2),
+          const SizedBox(height: Sentin8Spacing.md),
+          Text(
+            'Enter the code displayed on your device.',
+            textAlign: TextAlign.center,
+            style: Sentin8Text.body,
+          ),
+          const SizedBox(height: Sentin8Spacing.lg),
+          TextField(
+            controller: _codeCtrl,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
+              LengthLimitingTextInputFormatter(9),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Device code',
+              hintText: 'XXXX-XXXX',
+              prefixIcon: Icon(Icons.devices_other),
+            ),
+            onChanged: (v) => setState(() {
+              _error = null;
+            }),
+            onSubmitted: (_) => _decideWithSession('approve'),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: Sentin8Spacing.md),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: Sentin8Text.body.copyWith(color: Sentin8Colors.errorCrimson),
+            ),
+          ],
+          const SizedBox(height: Sentin8Spacing.lg),
+          FilledButton(
+            onPressed: _codeCtrl.text.trim().isEmpty
+                ? null
+                : () => _decideWithSession('approve'),
+            child: const Text('Continue'),
           ),
         ],
       );
@@ -255,7 +409,66 @@ class _DevicePageState extends State<DevicePage> {
           ),
           const SizedBox(height: Sentin8Spacing.md),
         ],
-        if (_hasSession) ...[
+        if (_pendingTokenId != null && _pendingTokenId!.isNotEmpty) ...[
+          // Embedded TOTP step (MFA-SYNC): the account requires the
+          // second factor before any device decision - a password alone
+          // can never approve or deny a device.
+          Text(
+            'This account requires multi-factor authentication. Enter the 6-digit code from your authenticator app.',
+            textAlign: TextAlign.center,
+            style: Sentin8Text.bodySecondary,
+          ),
+          const SizedBox(height: Sentin8Spacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(6, (i) {
+              return SizedBox(
+                width: 48,
+                child: TextField(
+                  controller: _totpCtrls[i],
+                  focusNode: _totpFocus[i],
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 1,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(counterText: ''),
+                  onChanged: (v) {
+                    setState(() => _error = null);
+                    _onTotpChanged(i, v);
+                    // Auto-decide (approve path) when all 6 digits land.
+                    if (_totp.length == 6 && !_isDeciding) {
+                      _verifyTotpAndDecide('approve');
+                    }
+                  },
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: Sentin8Spacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isDeciding || _totp.length != 6
+                      ? null
+                      : () => _verifyTotpAndDecide('deny'),
+                  child: const Text('Deny'),
+                ),
+              ),
+              const SizedBox(width: Sentin8Spacing.md),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _isDeciding || _totp.length != 6
+                      ? null
+                      : () => _verifyTotpAndDecide('approve'),
+                  child: _isDeciding
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Approve'),
+                ),
+              ),
+            ],
+          ),
+        ] else if (_hasSession) ...[
           if (_sessionEmail != null)
             Text(
               'Signed in as $_sessionEmail',
@@ -263,11 +476,26 @@ class _DevicePageState extends State<DevicePage> {
               style: Sentin8Text.caption,
             ),
           const SizedBox(height: Sentin8Spacing.md),
-          FilledButton(
-            onPressed: _isApproving ? null : _approveWithSession,
-            child: _isApproving
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Approve'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isDeciding ? null : () => _decideWithSession('deny'),
+                  child: _isDeciding
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Deny'),
+                ),
+              ),
+              const SizedBox(width: Sentin8Spacing.md),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _isDeciding ? null : () => _decideWithSession('approve'),
+                  child: _isDeciding
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Approve'),
+                ),
+              ),
+            ],
           ),
         ] else ...[
           TextField(
@@ -292,10 +520,10 @@ class _DevicePageState extends State<DevicePage> {
           ),
           const SizedBox(height: Sentin8Spacing.lg),
           FilledButton(
-            onPressed: _isApproving ? null : _signInAndApprove,
-            child: _isApproving
+            onPressed: _isDeciding ? null : _signInAndApprove,
+            child: _isDeciding
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Sign In & Approve'),
+                : const Text('Sign In'),
           ),
         ],
       ],

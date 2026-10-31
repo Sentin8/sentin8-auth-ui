@@ -127,8 +127,10 @@ class _SignInPageState extends State<SignInPage> {
       final res = await _api!.signIn(_emailCtrl.text, _passwordCtrl.text);
 
       if (res.mfaRequired) {
-        // Redirect to MFA verification
-        _navigateTo('/mfa?sessionId=${res.sessionId}'
+        // Redirect to MFA verification with the challenge capability
+        // (the server's needs_mfa contract: pending_token_id - never a
+        // session id; consuming the challenge activates the session).
+        _navigateTo('/mfa?pending_token_id=${res.pendingTokenId}'
             '${widget.redirectUri != null ? '&redirect_uri=${Uri.encodeComponent(widget.redirectUri!)}' : ''}'
             '${widget.state != null ? '&state=${widget.state}' : ''}');
         return;

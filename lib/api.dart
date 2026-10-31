@@ -162,15 +162,19 @@ class AuthApi {
     return session;
   }
 
-  /// Approve a device sign-in (RFC 8628 §3.3) - `POST /device/verify`.
+  /// Approve or deny a device sign-in (RFC 8628 §3.3/§3.4) - `POST /device/verify`.
   ///
   /// SEC-2.1.4: the approving user comes from the session server-side, so
-  /// the body carries only the `user_code`. When `sessionToken` is passed
-  /// the call uses `Authorization: Bearer <token>` (Bearer is CSRF-exempt,
-  /// SEC-2.4.4); otherwise the `__session` cookie authenticates the request
-  /// and `_jsonHeaders` supplies the `X-Sentin8-CSRF` header from the
-  /// restored session token id.
-  Future<void> verifyDevice(String userCode, {String? sessionToken}) async {
+  /// the body carries only the `user_code` and the decision. When
+  /// `sessionToken` is passed the call uses `Authorization: Bearer <token>`
+  /// (Bearer is CSRF-exempt, SEC-2.4.4); otherwise the `__session` cookie
+  /// authenticates the request and `_jsonHeaders` supplies the
+  /// `X-Sentin8-CSRF` header from the restored session token id.
+  /// A 401 `mfa required` answer surfaces as `AuthApiException` so the
+  /// page can render the TOTP step (MFA-SYNC: a password alone can never
+  /// decide a device).
+  Future<void> verifyDevice(String userCode,
+      {String? sessionToken, String action = 'approve'}) async {
     final sw = Stopwatch()..start();
     final headers = Map<String, String>.from(_jsonHeaders);
     if (sessionToken != null && sessionToken.isNotEmpty) {
@@ -179,7 +183,7 @@ class AuthApi {
     final res = await _client.post(
       Uri.parse('$baseUrl/device/verify'),
       headers: headers,
-      body: jsonEncode({'user_code': userCode}),
+      body: jsonEncode({'user_code': userCode, 'action': action}),
     );
     sw.stop();
     _record('POST', '/device/verify', res.statusCode, sw.elapsedMilliseconds);
@@ -232,13 +236,22 @@ class AuthApi {
   }
 
   /// Verify MFA (TOTP code).
-  Future<void> verifyMfa(String code, {String? sessionId}) async {
+  /// Verify MFA (TOTP). `pendingTokenId` is the `pending_token_id` the
+  /// sign-in response carried (the server's `needs_mfa` contract,
+  /// DESIGN §3) - never a session id: the pending row is a capability
+  /// to complete the challenge, not a session, and consuming the
+  /// challenge is what ACTIVATES the session.
+  Future<void> verifyMfa(String code, {String? pendingTokenId}) async {
     AuthUiMetrics().recordMfaAttempt();
     final sw = Stopwatch()..start();
     final res = await _client.post(
       Uri.parse('$baseUrl/v1/mfa/verify'),
       headers: _jsonHeaders,
-      body: jsonEncode({'code': code, if (sessionId != null) 'session_id': sessionId}),
+      body: jsonEncode({
+        'code': code,
+        if (pendingTokenId != null && pendingTokenId.isNotEmpty)
+          'pending_token_id': pendingTokenId,
+      }),
     );
     sw.stop();
     if (res.statusCode >= 400) {
@@ -414,12 +427,25 @@ class AuthApi {
 }
 
 /// Sign-in response from POST /v1/sign-in.
+///
+/// The server answers one of two shapes (MFA-SYNC, DESIGN §3):
+/// - `ok`: `{user_id, session_id, token, email}` + an active-session
+///   cookie (no MFA enrolled for the account).
+/// - `needs_mfa`: `{status: "needs_mfa", pending_token_id, factor_id}` -
+///   NO active session exists; the page must collect the TOTP code
+///   and complete `/v1/mfa/verify` with `pending_token_id`.
 class SignInResponse {
   final String userId;
   final String sessionId;
   final String token;
   final String email;
+  /// True when the response was the `needs_mfa` shape.
   final bool mfaRequired;
+  /// The `needs_mfa` shape's `pending_token_id` - the challenge
+  /// capability (empty on the `ok` shape).
+  final String pendingTokenId;
+  /// The `needs_mfa` shape's `factor_id` (empty on the `ok` shape).
+  final String factorId;
 
   const SignInResponse({
     required this.userId,
@@ -427,6 +453,8 @@ class SignInResponse {
     required this.token,
     required this.email,
     this.mfaRequired = false,
+    this.pendingTokenId = '',
+    this.factorId = '',
   });
 
   factory SignInResponse.fromJson(Map<String, dynamic> json) => SignInResponse(
@@ -434,7 +462,9 @@ class SignInResponse {
         sessionId: json['session_id'] as String? ?? '',
         token: json['token'] as String? ?? '',
         email: json['email'] as String? ?? '',
-        mfaRequired: json['mfa_required'] as bool? ?? json['mfa_required'] as bool? ?? false,
+        mfaRequired: json['status'] == 'needs_mfa',
+        pendingTokenId: json['pending_token_id'] as String? ?? '',
+        factorId: json['factor_id'] as String? ?? '',
       );
 }
 

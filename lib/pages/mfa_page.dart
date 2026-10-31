@@ -6,7 +6,9 @@
 // Sentin8 Auth UI - MFA verification page (TOTP input).
 //
 // Presents a 6-digit code input for TOTP-based MFA verification.
-// Calls POST /v1/mfa/verify with the code and session ID.
+// Calls POST /v1/mfa/verify with the code and the pending session
+// token id; on success the pending session is ACTIVATED (the
+// set-cookie in the response completes the sign-in).
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,10 +16,14 @@ import '../theme.dart';
 import '../api.dart';
 
 class MfaPage extends StatefulWidget {
-  final String? sessionId;
+  /// The `pending_token_id` from the sign-in response (the server's
+  /// `needs_mfa` contract): the challenge capability whose consumption
+  /// ACTIVATES the session. Never a session id - a pending MFA session
+  /// authenticates nothing (MFA-SYNC, DESIGN §3).
+  final String? pendingTokenId;
   final String? redirectUri;
 
-  const MfaPage({super.key, this.sessionId, this.redirectUri});
+  const MfaPage({super.key, this.pendingTokenId, this.redirectUri});
 
   @override
   State<MfaPage> createState() => _MfaPageState();
@@ -52,7 +58,7 @@ class _MfaPageState extends State<MfaPage> {
 
     try {
       final api = AuthApi(baseUrl: web.window.location.origin);
-      await api.verifyMfa(_code, sessionId: widget.sessionId);
+      await api.verifyMfa(_code, pendingTokenId: widget.pendingTokenId);
 
       // Success - redirect
       if (widget.redirectUri != null && widget.redirectUri!.isNotEmpty) {
