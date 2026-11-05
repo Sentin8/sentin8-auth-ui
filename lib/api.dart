@@ -105,6 +105,66 @@ class AuthApi {
     return SignInResponse.fromJson(body);
   }
 
+  /// Identify step (IDFIRST-1): email-only - returns the continuation
+  /// token + the account's auth-method hints so the credential step can
+  /// route (password / passkey / MFA expectation). Unknown emails answer
+  /// the same shape (default hints) - the step differentiates nothing but
+  /// the throttled hints.
+  Future<IdentifyResponse> identify(String email) async {
+    final sw = Stopwatch()..start();
+    final res = await _client.post(
+      Uri.parse('$baseUrl/v1/sign-in/identify'),
+      headers: _jsonHeaders,
+      body: jsonEncode({'email': email}),
+    );
+    sw.stop();
+    if (res.statusCode >= 400) {
+      _recordError('POST', '/v1/sign-in/identify', res.statusCode, sw.elapsedMilliseconds);
+      final body = _decode(res);
+      throw AuthApiException(res.statusCode, body['message'] as String? ?? 'Identification failed');
+    }
+    _record('POST', '/v1/sign-in/identify', res.statusCode, sw.elapsedMilliseconds);
+    return IdentifyResponse.fromJson(_decode(res));
+  }
+
+  /// Passkey-first begin: the server answers the WebAuthn assertion
+  /// options (challenge + allowCredentials) for the identified account.
+  Future<Map<String, dynamic>> passkeySignInBegin(String continuationToken) async {
+    final sw = Stopwatch()..start();
+    final res = await _client.post(
+      Uri.parse('$baseUrl/v1/passkey/sign-in/begin'),
+      headers: _jsonHeaders,
+      body: jsonEncode({'continuation_token': continuationToken}),
+    );
+    sw.stop();
+    if (res.statusCode >= 400) {
+      _recordError('POST', '/v1/passkey/sign-in/begin', res.statusCode, sw.elapsedMilliseconds);
+      final body = _decode(res);
+      throw AuthApiException(res.statusCode, body['message'] as String? ?? 'Passkey sign-in failed');
+    }
+    _record('POST', '/v1/passkey/sign-in/begin', res.statusCode, sw.elapsedMilliseconds);
+    return _decode(res);
+  }
+
+  /// Passkey-first finish: submit the assertion - the server creates the
+  /// session `active` and sets the session cookie on this response.
+  Future<Map<String, dynamic>> passkeySignInFinish(Map<String, dynamic> assertion) async {
+    final sw = Stopwatch()..start();
+    final res = await _client.post(
+      Uri.parse('$baseUrl/v1/passkey/sign-in/finish'),
+      headers: _jsonHeaders,
+      body: jsonEncode(assertion),
+    );
+    sw.stop();
+    if (res.statusCode >= 400) {
+      _recordError('POST', '/v1/passkey/sign-in/finish', res.statusCode, sw.elapsedMilliseconds);
+      final body = _decode(res);
+      throw AuthApiException(res.statusCode, body['message'] as String? ?? 'Passkey verification failed');
+    }
+    _record('POST', '/v1/passkey/sign-in/finish', res.statusCode, sw.elapsedMilliseconds);
+    return _decode(res);
+  }
+
   /// Sign up a new customer.
   Future<SignUpResponse> signUp(String email, String password, {String? firstName, String? lastName}) async {
     AuthUiMetrics().recordSignUpAttempt();
@@ -465,6 +525,33 @@ class SignInResponse {
         mfaRequired: json['status'] == 'needs_mfa',
         pendingTokenId: json['pending_token_id'] as String? ?? '',
         factorId: json['factor_id'] as String? ?? '',
+      );
+}
+
+/// Identify answer from `POST /v1/sign-in/identify` (IDFIRST-1).
+///
+/// The continuation token is opaque; `methods` routes the credential
+/// step ("password" always, "passkey" when an active WebAuthn factor
+/// exists) and `mfaRequired` labels the TOTP expectation.
+class IdentifyResponse {
+  final String continuationToken;
+  final List<String> methods;
+  final bool mfaRequired;
+
+  const IdentifyResponse({
+    required this.continuationToken,
+    required this.methods,
+    required this.mfaRequired,
+  });
+
+  bool get hasPasskey => methods.contains('passkey');
+
+  factory IdentifyResponse.fromJson(Map<String, dynamic> json) => IdentifyResponse(
+        continuationToken: json['continuation_token'] as String? ?? '',
+        methods: (json['methods'] as List<dynamic>? ?? const [])
+            .map((e) => e as String)
+            .toList(),
+        mfaRequired: json['mfa_required'] as bool? ?? false,
       );
 }
 

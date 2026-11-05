@@ -22,6 +22,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sentin8_auth_ui/main.dart';
 import 'package:sentin8_auth_ui/branding_provider.dart';
 import 'package:sentin8_auth_ui/theme.dart';
+import 'package:sentin8_auth_ui/api.dart';
 import 'package:sentin8_auth_ui/pages/sign_in_page.dart';
 
 /// Pump a bare SignInPage under the given branding - the app shell
@@ -127,6 +128,45 @@ void main() {
     ) async {
       const branding = Branding();
       expect(branding.primaryColorValue, const Color(0xFFD4AF37));
+    });
+
+    group('Identifier-first sign-in (IDFIRST-1)', () {
+      testWidgets('Step 1 renders email field and Continue', (tester) async {
+        await tester.pumpWidget(brandingHarness(const Branding()));
+        await tester.pumpAndSettle();
+        expect(find.text('Email'), findsOneWidget);
+        expect(find.text('Continue'), findsOneWidget);
+        // Step 2 elements are absent before the identify step.
+        expect(find.text('Password'), findsNothing);
+      });
+
+      testWidgets('Identify DTO parses the wire shape', (tester) async {
+        const res = IdentifyResponse(
+          continuationToken: 'tok',
+          methods: ['password', 'passkey'],
+          mfaRequired: true,
+        );
+        expect(res.hasPasskey, isTrue);
+        final parsed = IdentifyResponse.fromJson(const {
+          'continuation_token': 't',
+          'methods': ['passkey', 'password'],
+          'mfa_required': false,
+        });
+        expect(parsed.hasPasskey, isTrue);
+        expect(parsed.mfaRequired, isFalse);
+        expect(parsed.continuationToken, 't');
+      });
+
+      testWidgets('Identify DTO defaults: password-only, no MFA',
+          (tester) async {
+        // The server always sends `methods`; a missing key degrades to
+        // the password-only credential step (hasPasskey false).
+        final parsed =
+            IdentifyResponse.fromJson(const {'continuation_token': 't'});
+        expect(parsed.methods, isEmpty);
+        expect(parsed.hasPasskey, isFalse);
+        expect(parsed.mfaRequired, isFalse);
+      });
     });
   });
 }

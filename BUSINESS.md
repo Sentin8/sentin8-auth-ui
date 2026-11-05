@@ -24,6 +24,8 @@
 | Capability | Description |
 |---|---|
 | Password sign-in | Single sign-in surface reused by console, CLI (device flow), and any OAuth client. |
+| Identifier-first sign-in | The hosted sign-in asks for the email first, then shows the credential step that account actually needs - password, passkey, or an MFA expectation - like modern consumer sign-in flows. Unknown emails get the same experience shape so the step never tells probers more than sign-up already does. |
+| Passkey sign-in | A user with an enrolled passkey can sign in with the passkey alone from the credential step - no password involved. |
 | Self-service registration | Sign-up with name, email, password with strength metering and terms acceptance. |
 | MFA verification | Six-digit TOTP challenge step when an account requires it; in the device-approval journey the code step is embedded in the same page. |
 | Password self-service | Forgotten-password request and token-based reset completion. |
@@ -67,6 +69,7 @@
 | Wallet | Issuer transparency | The number of trusted issuers is disclosed before the wallet interaction starts. |
 | Branding | Tenant identity | Logo, colors and sign-in text reflect the visiting tenant, with platform fallbacks when unset. |
 | Branding | Legal links | The footer always shows Privacy Policy and Terms of Service links; a tenant that sets custom URLs routes users to its own legal pages. |
+| Sign-in | Two-step shape | Email first, credential second. The credential step adapts to the account (password, passkey, MFA expectation); the email chip on step 2 lets the user go back without losing the OAuth context. |
 
 ## 4. Business Events (Outbound)
 
