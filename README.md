@@ -33,7 +33,8 @@ OAuth endpoints. All API calls are same-origin against the Auth service's own
   (`code` / `state`) at their `redirect_uri`. This removes the entire class of
   token-leak risks that client-side auth forms introduce.
 - **Tenant branding at the front door.** Every environment wants its own
-  logo, colors, and sign-in text. Fetching branding at startup from
+  logo, colors, sign-in text, and legal links. Fetching branding at
+  startup from
   `GET /v1/branding` (cookie-scoped by TLS context headers) lets a single
   build serve all tenants.
 - **Browser-only, zero-backend build complexity.** The app is pure Flutter

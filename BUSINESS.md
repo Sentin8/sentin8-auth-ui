@@ -66,6 +66,7 @@
 | Assisted login | Binding transparency | The user sees the binding message and short code the operator gave them before confirming. |
 | Wallet | Issuer transparency | The number of trusted issuers is disclosed before the wallet interaction starts. |
 | Branding | Tenant identity | Logo, colors and sign-in text reflect the visiting tenant, with platform fallbacks when unset. |
+| Branding | Legal links | The footer always shows Privacy Policy and Terms of Service links; a tenant that sets custom URLs routes users to its own legal pages. |
 
 ## 4. Business Events (Outbound)
 
@@ -101,6 +102,11 @@ parameters, not platform events.
    user being returned to that application - never dropped on a platform page.
 7. Unbranded tenants see the platform identity; branded tenants see their own,
    with platform elements (`Powered by Sentin8`) retained.
+8. Every sign-in and sign-up page shows its legal surface: the footer's
+   Privacy Policy and Terms of Service links render always - tenant URLs
+   when set, the platform's sentin8.dev pages otherwise - above the
+   `Powered by Sentin8` lockup, so the user can read the governing terms
+   before creating an account.
 
 ## 6. Target-User Roles & Use Cases
 

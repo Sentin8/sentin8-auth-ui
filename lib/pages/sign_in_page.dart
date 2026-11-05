@@ -436,8 +436,8 @@ class _SignInPageState extends State<SignInPage> {
               ),
             ),
             const SizedBox(height: Sentin8Spacing.xs),
-            // Powered by Sentin8 - outside the form panel
-            const PoweredBySentin8(),
+            // Legal links + Powered by Sentin8 - outside the form panel
+            const AuthUiFooter(),
           ],
         ),
       ),

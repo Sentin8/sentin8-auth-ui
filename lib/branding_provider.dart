@@ -28,6 +28,8 @@ class Branding {
   final String customCss;
   final String signInText;
   final String organizationName;
+  final String privacyUrl;
+  final String termsUrl;
 
   const Branding({
     this.logoUrl = '',
@@ -39,6 +41,8 @@ class Branding {
     this.customCss = '',
     this.signInText = '',
     this.organizationName = '',
+    this.privacyUrl = '',
+    this.termsUrl = '',
   });
 
   bool get hasLogo => logoUrl.isNotEmpty;
@@ -49,6 +53,10 @@ class Branding {
   bool get hasThemeMode => themeMode.isNotEmpty;
   bool get hasSignInText => signInText.isNotEmpty;
   bool get hasOrganizationName => organizationName.isNotEmpty;
+  /// True when the tenant set a custom privacy-policy link.
+  bool get hasPrivacyUrl => privacyUrl.isNotEmpty;
+  /// True when the tenant set a custom terms-of-service link.
+  bool get hasTermsUrl => termsUrl.isNotEmpty;
   bool get isLightTheme => themeMode == 'light';
   bool get isDarkTheme => themeMode == 'dark';
 
@@ -90,7 +98,9 @@ class BrandingProvider extends InheritedWidget {
       branding.fontFamily != oldWidget.branding.fontFamily ||
       branding.themeMode != oldWidget.branding.themeMode ||
       branding.signInText != oldWidget.branding.signInText ||
-      branding.organizationName != oldWidget.branding.organizationName;
+      branding.organizationName != oldWidget.branding.organizationName ||
+      branding.privacyUrl != oldWidget.branding.privacyUrl ||
+      branding.termsUrl != oldWidget.branding.termsUrl;
 }
 
 /// Stateful wrapper that fetches branding on startup and provides it
@@ -134,6 +144,8 @@ class _BrandingScopeState extends State<BrandingScope> {
               customCss: data['custom_css'] as String? ?? '',
               signInText: data['sign_in_text'] as String? ?? '',
               organizationName: data['organization_name'] as String? ?? '',
+              privacyUrl: data['privacy_url'] as String? ?? '',
+              termsUrl: data['terms_url'] as String? ?? '',
             );
             _loaded = true;
           });

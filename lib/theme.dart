@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:web/web.dart' as web;
 import 'branding_provider.dart';
 
 /// Resolves a tenant `fontFamily` branding string (e.g. "Inter", "Lato", or a
@@ -482,8 +483,80 @@ class Sentin8Logo extends StatelessWidget {
   }
 }
 
+/// Hosted-UI footer - the legal links ("Privacy Policy" and
+/// "Terms of Service") above the "Powered by Sentin8" lockup.
+///
+/// The link URLs are tenant branding (`privacy_url` / `terms_url`) with
+/// the platform defaults (sentin8.dev legal pages) when the tenant set
+/// none - the footer always shows both links. Links open in a new tab
+/// so a legal read never aborts an in-progress sign-in flow.
+class AuthUiFooter extends StatelessWidget {
+  /// Platform privacy-policy URL used when the tenant set none.
+  static const String defaultPrivacyUrl = 'https://sentin8.dev/privacy';
+
+  /// Platform terms-of-service URL used when the tenant set none.
+  static const String defaultTermsUrl = 'https://sentin8.dev/terms';
+
+  const AuthUiFooter({super.key});
+
+  void _open(String url) {
+    web.window.open(url, '_blank');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final branding = BrandingProvider.of(context);
+    final privacyUrl =
+        branding.hasPrivacyUrl ? branding.privacyUrl : defaultPrivacyUrl;
+    final termsUrl =
+        branding.hasTermsUrl ? branding.termsUrl : defaultTermsUrl;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton(
+              onPressed: () => _open(privacyUrl),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Privacy Policy',
+                style: GoogleFonts.quicksand(fontSize: 12),
+              ),
+            ),
+            Text(
+              '·',
+              style: GoogleFonts.quicksand(fontSize: 12),
+            ),
+            TextButton(
+              onPressed: () => _open(termsUrl),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Terms of Service',
+                style: GoogleFonts.quicksand(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const PoweredBySentin8(),
+      ],
+    );
+  }
+}
+
 /// "Powered by" footer - shows the Sentin8 icon + "Sentin8" wordmark.
-/// Used at the bottom of sign-in and sign-up forms.
+/// Used at the bottom of sign-in and sign-up forms (nested inside
+/// [AuthUiFooter], below the legal links).
 class PoweredBySentin8 extends StatelessWidget {
   const PoweredBySentin8({super.key});
 

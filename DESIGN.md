@@ -96,7 +96,7 @@ graph TD
         end
         APICLIENT["AuthApi + DTOs + AuthApiException"]
         BRAND["BrandingScope → BrandingProvider"]
-        THEME["theme.dart design system"]
+        THEME["theme.dart design system<br/>+ AuthUiFooter (legal links + Powered by)"]
         OBS["observability.dart"]
     end
     ENTRY --> ROUTER --> Pages
@@ -238,7 +238,7 @@ state (all in-memory, never persisted):
 |---|---|---|---|
 | Session token id (`_restoredSessionToken`) | `AuthApi` | page session | Arms `x-sentin8-csrf` on cookie-authenticated mutations |
 | Correlation id (`a8u-<epoch>-<rand>`) | `observability.dart` | page session | Request tracing across pages of one session |
-| Branding (`logoUrl, logoIconUrl, primaryColor, accentColor, fontFamily, themeMode, customCss, signInText, organizationName`) | `BrandingProvider` | page session | Theme + logo + sign-in text |
+| Branding (`logoUrl, logoIconUrl, primaryColor, accentColor, fontFamily, themeMode, customCss, signInText, organizationName, privacyUrl, termsUrl`) | `BrandingProvider` | page session | Theme + logo + sign-in text + footer legal links |
 | OAuth context (`client_id, redirect_uri, state, code_challenge, scope, consent_required`) | constructor args + URL params | single page + query-string round-trip | Resume the authorization flow |
 | Form state (inputs, errors, strength meter) | per-page `StatefulWidget` | page lifecycle | Input and error display |
 | Logger ring buffer (500 entries) / metrics / alert windows | `observability.dart` | page session | In-memory diagnostics |
@@ -291,6 +291,11 @@ matching Flutter route.
   401/403/409/422/429 to friendly copy; network failures are generic retries.
 - **Branding resolution**: Auth resolves org-base → env-override; the UI
   falls back per-field (compiled default → branding value → bundled logo).
+  The footer legal links always render: tenant `privacyUrl`/`termsUrl` →
+  the platform defaults (`https://sentin8.dev/privacy`, `https://sentin8.dev/terms`)
+  when the tenant set none - an auth page never hides its legal surface.
+  Links open in a new tab (`window.open`) so a legal read never aborts the
+  in-progress sign-in/sign-up flow.
 - **TLS posture**: served only from the Auth TLS origin (platform post-
   quantum TLS); no external CDN dependencies (CanvasKit is force-served from
   `/canvaskit/` on the same origin - air-gapped-safe loading).
