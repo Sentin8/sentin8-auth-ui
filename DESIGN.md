@@ -215,7 +215,7 @@ sequenceDiagram
             B->>D: 6-digit code
             D->>A: POST /v1/mfa/verify {code, pending_token_id}
             A-->>D: 200 {status:"active", session_cookie}
-            Note over D: cookie is now set; approval proceeds cookie-authenticated
+            Note over D: cookie is now set - approval proceeds cookie-authenticated
         else ok
             A-->>D: {token}
         end
