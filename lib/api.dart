@@ -222,6 +222,26 @@ class AuthApi {
     return session;
   }
 
+  /// Fetch the REQUESTING client's DCR display metadata (RFC 7591
+  /// §2.1: `logo_uri` / `policy_uri` / `tos_uri` are "SHOULD be displayed
+  /// to the End-User") - the sign-in page renders the client's identity
+  /// (CONFFIX-1, the suite's oidcc-registration-logo/policy/tos-uri
+  /// modules). Absent members = not registered; the page renders nothing
+  /// client-specific for an unknown client.
+  Future<ClientDisplay?> getClientDisplay(String clientId) async {
+    final sw = Stopwatch()..start();
+    final res = await _client.get(
+      Uri.parse(
+          '$baseUrl/v1/auth/client/display?client_id=${Uri.encodeQueryComponent(clientId)}'),
+      headers: _getHeaders,
+    );
+    sw.stop();
+    _record('GET', '/v1/auth/client/display', res.statusCode, sw.elapsedMilliseconds);
+    if (res.statusCode >= 400) return null;
+    final body = _decode(res);
+    return ClientDisplay.fromJson(body);
+  }
+
   /// Approve or deny a device sign-in (RFC 8628 §3.3/§3.4) - `POST /device/verify`.
   ///
   /// SEC-2.1.4: the approving user comes from the session server-side, so
@@ -612,4 +632,37 @@ class AuthApiException implements Exception {
   AuthApiException(this.statusCode, this.message);
   @override
   String toString() => message;
+}
+
+/// The REQUESTING client's DCR display metadata (RFC 7591 §2.1 - the
+/// OP displays `logo_uri`/`policy_uri`/`tos_uri` to the End-User;
+/// CONFFIX-1). Absent members = not registered.
+class ClientDisplay {
+  final String clientName;
+  final String logoUri;
+  final String clientUri;
+  final String policyUri;
+  final String tosUri;
+
+  const ClientDisplay({
+    this.clientName = '',
+    this.logoUri = '',
+    this.clientUri = '',
+    this.policyUri = '',
+    this.tosUri = '',
+  });
+
+  bool get hasAny =>
+      clientName.isNotEmpty ||
+      logoUri.isNotEmpty ||
+      policyUri.isNotEmpty ||
+      tosUri.isNotEmpty;
+
+  factory ClientDisplay.fromJson(Map<String, dynamic> json) => ClientDisplay(
+        clientName: json['client_name'] as String? ?? '',
+        logoUri: json['logo_uri'] as String? ?? '',
+        clientUri: json['client_uri'] as String? ?? '',
+        policyUri: json['policy_uri'] as String? ?? '',
+        tosUri: json['tos_uri'] as String? ?? '',
+      );
 }

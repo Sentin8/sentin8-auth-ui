@@ -83,6 +83,13 @@ class _SignInPageState extends State<SignInPage> {
   IdentifyResponse? _identify;
   bool _passkeyBusy = false;
 
+  // The REQUESTING client's DCR display metadata (RFC 7591 §2.1 -
+  // logo_uri/policy_uri/tos_uri are "SHOULD be displayed to the
+  // End-User"; CONFFIX-1): fetched in initState when the authorize
+  // request carries a client_id, rendered as the client identity strip
+  // above the heading.
+  ClientDisplay? _clientDisplay;
+
   @override
   void initState() {
     super.initState();
@@ -105,6 +112,18 @@ class _SignInPageState extends State<SignInPage> {
     setDenyHandler(() {
       _denyAuthorizeFlow();
     });
+    // CONFFIX-1 (RFC 7591 §2.1): resolve the REQUESTING client's display
+    // metadata (logo/policy/TOS) so the sign-in page shows the client
+    // the user is authenticating TO. Failures render nothing (the
+    // platform branding stands alone).
+    final cid = widget.clientId;
+    if (cid != null && cid.isNotEmpty) {
+      _api?.getClientDisplay(cid).then((display) {
+        if (mounted && display != null && display.hasAny) {
+          setState(() => _clientDisplay = display);
+        }
+      }).catchError((_) {});
+    }
   }
 
   String _baseUrl() {
@@ -433,6 +452,10 @@ class _SignInPageState extends State<SignInPage> {
                       size: 36,
                       logoUrl: branding.logoUrl,
                       logoIconUrl: branding.logoIconUrl),
+                  if (_clientDisplay != null) ...[
+                    const SizedBox(height: Sentin8Spacing.md),
+                    ClientIdentityStrip(display: _clientDisplay!),
+                  ],
                   const SizedBox(height: Sentin8Spacing.lg),
                   Text(
                     heading,

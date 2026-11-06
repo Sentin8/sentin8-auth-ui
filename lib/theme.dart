@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:web/web.dart' as web;
+import 'api.dart';
 import 'branding_provider.dart';
 
 /// Resolves a tenant `fontFamily` branding string (e.g. "Inter", "Lato", or a
@@ -479,6 +480,82 @@ class Sentin8Logo extends StatelessWidget {
     return SvgPicture.asset(
       'assets/logos/sentin8-logo-icon.svg',
       height: size,
+    );
+  }
+}
+
+/// The REQUESTING client's identity strip (RFC 7591 §2.1 - CONFFIX-1):
+/// the sign-in page displays the OAuth client's `logo_uri`, display
+/// name, and its `policy_uri`/`tos_uri` links so the End-User sees
+/// WHICH client they are authenticating to. Links open in a new tab;
+/// absent members render nothing.
+class ClientIdentityStrip extends StatelessWidget {
+  /// The client's DCR display metadata (from /v1/auth/client/display).
+  final ClientDisplay display;
+
+  const ClientIdentityStrip({super.key, required this.display});
+
+  void _open(String url) {
+    web.window.open(url, '_blank');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    if (display.logoUri.isNotEmpty) {
+      children.add(ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Image.network(
+          display.logoUri,
+          width: 28,
+          height: 28,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return const SizedBox.shrink();
+          },
+        ),
+      ));
+    }
+    if (display.clientName.isNotEmpty) {
+      children.add(Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Text(
+          display.clientName,
+          style: GoogleFonts.quicksand(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: textPrimaryFor(context),
+          ),
+        ),
+      ));
+    }
+    if (display.policyUri.isNotEmpty) {
+      children.add(_link(context, 'Policy', display.policyUri));
+    }
+    if (display.tosUri.isNotEmpty) {
+      children.add(_link(context, 'Terms', display.tosUri));
+    }
+    if (children.isEmpty) return const SizedBox.shrink();
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      children: children,
+    );
+  }
+
+  Widget _link(BuildContext context, String label, String url) {
+    return TextButton(
+      onPressed: () => _open(url),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.quicksand(fontSize: 12),
+      ),
     );
   }
 }

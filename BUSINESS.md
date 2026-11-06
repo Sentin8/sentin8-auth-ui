@@ -36,6 +36,7 @@
 | Assisted login (CIBA) | Human confirmation step for operator/teller-initiated logins, including sign-in when required. |
 | Wallet sign-in | Sign-in via EUDI digital identity wallet with trusted-issuer transparency and password fallback. |
 | Tenant branding | Per-tenant logo, colors, fonts, sign-in text and theme mode applied at runtime. |
+| Requesting-client identity | When a sign-in happens for an OAuth client, the sign-in page shows that client's own logo, name, and its policy/terms links (the client's registered display metadata) - so the user always sees which application they are signing in to. |
 | Accessible experience | Screen-reader/A11y semantics enabled for assistive technology and automated testing. |
 
 ### What the service does NOT own (business boundary)

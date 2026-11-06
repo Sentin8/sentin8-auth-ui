@@ -264,6 +264,7 @@ state (all in-memory, never persisted):
 | Branding (`logoUrl, logoIconUrl, primaryColor, accentColor, fontFamily, themeMode, customCss, signInText, organizationName, privacyUrl, termsUrl`) | `BrandingProvider` | page session | Theme + logo + sign-in text + footer legal links |
 | Identify answer (`continuationToken, methods, mfaRequired, email`) | `SignInPage` state machine | step 2 of one page visit | Credential step routing (password / passkey / MFA expectation); dropped on Back |
 | OAuth context (`client_id, redirect_uri, state, code_challenge, scope, consent_required`) | constructor args + URL params | single page + query-string round-trip | Resume the authorization flow |
+| Client display (`logoUri, clientUri, policyUri, tosUri, clientName`) | `SignInPage` state (fetched in initState) | page session | The REQUESTING client's DCR display metadata (RFC 7591 §2.1: the OP displays the client's `logo_uri`/`policy_uri`/`tos_uri` to the End-User) - rendered as the client identity strip |
 | Form state (inputs, errors, strength meter) | per-page `StatefulWidget` | page lifecycle | Input and error display |
 | Logger ring buffer (500 entries) / metrics / alert windows | `observability.dart` | page session | In-memory diagnostics |
 
@@ -288,6 +289,7 @@ session token id is known; GETs do not):
 | `GET /v1/ciba/assisted/{auth_req_id}` / `POST .../complete` | Assisted Login read/confirm | cookie+CSRF |
 | `GET /v1/auth/wallet/metadata` | trusted issuer info for wallet UI | anonymous |
 | `GET /v1/branding` | tenant branding | cookie, credentials include |
+| `GET /v1/auth/client/display?client_id=` | the REQUESTING client's DCR display fields (RFC 7591 §2.1 - logo/policy/TOS rendering on the sign-in page) | anonymous (pre-session surface) |
 | `POST /v1/sign-in/identify` | step 1: email → continuation token + method hints (identifier-first) | anonymous, bot-gated |
 | `POST /v1/passkey/sign-in/begin` + `/finish` | step 2 passkey factor: assertion ceremony → active session | continuation token; WebAuthn userVerification=required |
 
@@ -322,6 +324,14 @@ matching Flutter route.
   when the tenant set none - an auth page never hides its legal surface.
   Links open in a new tab (`window.open`) so a legal read never aborts the
   in-progress sign-in/sign-up flow.
+- **Client identity (RFC 7591 §2.1 - CONFFIX-1)**: when the authorize
+  request carries a `client_id`, the sign-in page fetches the client's
+  DCR display metadata and renders the client identity strip - the
+  `logo_uri` image, the display name, and the `policy_uri`/`tos_uri`
+  links - so the End-User sees WHICH client they are authenticating
+  to (the OP's display SHOULD). Absent members render nothing; an
+  unknown client falls back to the platform branding alone. The strip
+  links open in a new tab (the same footer posture).
 - **TLS posture**: served only from the Auth TLS origin (platform post-
   quantum TLS); no external CDN dependencies (CanvasKit is force-served from
   `/canvaskit/` on the same origin - air-gapped-safe loading).
