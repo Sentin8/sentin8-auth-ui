@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: Sentin8/sentin8-ci/.github/workflows/flutter-app.yml@ci-v1
+    uses: Sentin8/sentin8-ci/.github/workflows/flutter-app.yml@ci-v2
     with:
       flutter-version: '3.47.2'
       sentin8-flutter-path: ''
