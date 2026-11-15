@@ -382,6 +382,12 @@ class _SignInPageState extends State<SignInPage> {
       if (widget.codeChallenge != null) 'code_challenge': widget.codeChallenge!,
       if (widget.nonce != null) 'nonce': widget.nonce!,
       if (widget.responseMode != null) 'response_mode': widget.responseMode!,
+      // DESIGN 9a.13 - the cell's response_type rides the consent hop:
+      // the hybrid/implicit cells deliver their members in the URL
+      // FRAGMENT, and the fragment channel keys on this relay (dropping
+      // it made the consent path answer a query-channel code for a
+      // code id_token request).
+      if (widget.responseType != null) 'response_type': widget.responseType!,
       if (widget.claims != null) 'claims': widget.claims!,
       if (widget.acrValues != null) 'acr_values': widget.acrValues!,
       if (widget.resource != null) 'resource': widget.resource!,
